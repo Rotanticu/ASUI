@@ -1,0 +1,20 @@
+{
+    "name": "ASUI",
+    "rootNamespace": "ASUI",
+    "references": [
+        "GUID:77221876cc6b8244180b96e320b1bcd4",
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:1a978488ab2d84444b1780b0c84f0bde",
+        "GUID:429ce86ba79f84c49933b0bce67ac793"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

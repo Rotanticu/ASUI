@@ -1,0 +1,38 @@
+MagicaCloth
+https://assetstore.unity.com/packages/tools/physics/magica-cloth-2-242307
+MagicaCloth2 is a cloth simulation that works with Unity DOTS. Available for both Transform and Mesh. It will be the successor version of the previous MagicaCloth.
+MagicaCloth2 是一款与 Unity DOTS 配合使用的布料模拟。适用于 Transform 和 Mesh。它将是上一个 MagicaCloth 的后续版本。
+参考了该插件编辑器面板的Folder布局写法
+
+OdinEditor
+https://assetstore.unity.com/packages/p/odin-inspector-and-serializer-89041
+Odin 能够完美部署到原有的工作流程中，无需费力的集成工作，让您能够序列化任何内容，并使用 80 多个全新检测器属性、无样板代码和更多功能来使用 Unity！
+参考了Odin的可以简单利用Unity序列化机制序列化字典的写法。
+推荐购买该插件，大幅提升编辑器使用体验
+
+R3
+https://github.com/Cysharp/R3
+UniRx的作者发布的第三代RX,补足UniRx对错误捕获的疏忽。提高性能，增加基于帧的操作，支持async/await语法
+本UI框架大量使用了反应式编程风格，以应对UI操作和动画带来的异步问题
+
+TextMeshPro-Chinese-Characters-Set
+https://github.com/wy-luke/Unity-TextMeshPro-Chinese-Characters-Set
+中文字符集，可以用来创建 Unity TextMeshPro 中文字体。
+提供常用重温字符集，而且有已经打好的SDF图，不用自己生成了
+
+LitMotion
+https://github.com/AnnulusGames/LitMotion
+Lightning-fast and Zero Allocation Tween Library for Unity.
+适用于 Unity 的闪电般快速且零分配的 Tween 库。
+性能极好，并且支持使用 R3 转换为可观察对象
+
+LoopScrollRect
+https://github.com/qiankanglai/LoopScrollRect
+
+uGUI
+https://github.com/Unity-Technologies/uGUI
+在uGUI基础上封装了新的UI组合
+
+Spring-It-On
+https://github.com/orangeduck/Spring-It-On
+提供常用的阻尼算法
