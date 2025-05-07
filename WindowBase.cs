@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -15,13 +16,6 @@ namespace ASUI
     }
     public abstract class ASUIWindowBase : WidgetsBase, IASUIWindowAnimation, IASUIStateSwitch
     {
-        private List<WidgetsBase> m_widgetsCollection;
-        public List<WidgetsBase> WidgetsCollection
-        {
-            get { return m_widgetsCollection; }
-            set { m_widgetsCollection = value; }
-        }
-
         private ASUIWindowState m_WindowState = ASUIWindowState.IsShow;
         public override bool IsVisible => this.WindowState != ASUIWindowState.IsHide;
 
@@ -42,15 +36,19 @@ namespace ASUI
         {
             get => this.WindowState is ASUIWindowState.IsShowAnimating or ASUIWindowState.IsHideAnimating;
         }
-        public ASUIStyleState styleState;
-        public ASUIStyleState StyleState { get => styleState; set => styleState = value; }
         public string CurrentState { get => styleState.State; set => styleState.State = value; }
 
-        public override void Show()
+        public override void Init(GameObject gameObject)
         {
-            base.Show();
+            this.styleState = this.Transform.GetComponent<ASUIStyleState>();
+            base.Init(gameObject);
+        }
+
+        public override async Task Show()
+        {
             this.WindowState = ASUIWindowState.IsShowAnimating;
             this.PlayShowAnimation();
+            await base.Show();
         }
         public abstract void PlayShowAnimation();
 
@@ -59,11 +57,12 @@ namespace ASUI
             this.WindowState = ASUIWindowState.IsShow;
             ShowAnimationCompletedEvent?.Invoke();
         }
-        public override void Hide()
+        public override async Task Hide()
         {
             this.WindowState = ASUIWindowState.IsHideAnimating;
-            base.Hide();
             this.PlayHideAnimation();
+            await base.Hide();
+            this.HideAnimationCompleted();
         }
         public abstract void PlayHideAnimation();
 
@@ -71,14 +70,7 @@ namespace ASUI
         {
             this.WindowState = ASUIWindowState.IsHide;
             HideAnimationCompletedEvent?.Invoke();
-            if (m_DestroyWhenHideCompleted)
-            {
-                this.DestroyImmediately();
-            }
-            else
-            {
-                this.GameObject.SetActive(false);
-            }
+            this.GameObject.SetActive(false);
         }
 
         public override void DestroyImmediately()

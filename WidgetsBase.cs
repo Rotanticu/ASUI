@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -13,46 +14,41 @@ namespace ASUI
     public abstract class WidgetsBase : IASUIInit, IASUIShow, IASUIHide, IASUIDestroy
     {
         private bool m_isInitialized;
-        public bool IsInitialized { get { return m_isInitialized; } }
+        public bool IsInitialized { get => m_isInitialized;}
 
         public abstract bool IsVisible { get; }
 
         public abstract bool IsShow { get; }
 
-        protected bool m_DestroyWhenHideCompleted;
-
         [SerializeField]
         private ASUIUnityEvent m_InitEvent;
-        public ASUIUnityEvent InitEvent { get { return m_InitEvent; } set { m_InitEvent = value; } }
+        public ASUIUnityEvent InitEvent { get => m_InitEvent; set => m_InitEvent = value; }
         [SerializeField]
         private ASUIUnityEvent m_ShowEvent;
-        public ASUIUnityEvent ShowEvent { get { return m_ShowEvent; } set { m_ShowEvent = value; } }
+        public ASUIUnityEvent ShowEvent { get => m_ShowEvent; set => m_ShowEvent = value; }
         [SerializeField]
         private ASUIUnityEvent m_ShowAnimationCompletedEvent;
-        public ASUIUnityEvent ShowAnimationCompletedEvent { get { return m_ShowAnimationCompletedEvent; } set { m_ShowAnimationCompletedEvent = value; } }
+        public ASUIUnityEvent ShowAnimationCompletedEvent { get => m_ShowAnimationCompletedEvent; set => m_ShowAnimationCompletedEvent = value; }
         [SerializeField]
         private ASUIUnityEvent m_HideEvent;
-        public ASUIUnityEvent HideEvent { get { return m_HideEvent; } set { m_HideEvent = value; } }
+        public ASUIUnityEvent HideEvent { get => m_HideEvent; set => m_HideEvent = value; }
         [SerializeField]
         private ASUIUnityEvent m_HideAnimationCompletedEvent;
-        public ASUIUnityEvent HideAnimationCompletedEvent { get { return m_HideAnimationCompletedEvent; } set { m_HideAnimationCompletedEvent = value; } }
+        public ASUIUnityEvent HideAnimationCompletedEvent { get => m_HideAnimationCompletedEvent; set => m_HideAnimationCompletedEvent = value; }
         [SerializeField]
         private ASUIUnityEvent m_DestroyEvent;
-        public ASUIUnityEvent DestroyEvent { get { return m_DestroyEvent; } set { m_DestroyEvent = value; } }
+        public ASUIUnityEvent DestroyEvent { get => m_DestroyEvent; set => m_DestroyEvent = value; }
 
         private GameObject m_GameObject;
-        public GameObject GameObject
-        {
-            get
-            {
-                return m_GameObject;
-            }
-            set
-            {
-                m_GameObject = value;
-            }
-        }
-        public Transform Transform { get { return m_GameObject.transform; } }
+        public GameObject GameObject { get => m_GameObject; set => m_GameObject = value;}
+        public Transform Transform { get => m_GameObject.transform; }
+
+        public ASUIStyleState styleState;
+        public ASUIStyleState StyleState { get => styleState; set => styleState = value; }
+
+        private List<WidgetsBase> m_widgetsCollection;
+        public List<WidgetsBase> Children { get => m_widgetsCollection; set => m_widgetsCollection = value; }
+
         public virtual void Init(GameObject gameObject)
         {
             this.m_GameObject = gameObject;
@@ -66,45 +62,49 @@ namespace ASUI
         {
             if (this.m_isInitialized)
                 return;
-            if(this.InitEvent == null) 
-                this.InitEvent = new ASUIUnityEvent();
-            if (this.ShowEvent == null) 
-                this.ShowEvent = new ASUIUnityEvent();
-            if (this.ShowAnimationCompletedEvent == null) 
-                this.ShowAnimationCompletedEvent = new ASUIUnityEvent();
-            if (this.HideEvent == null) 
-                this.HideEvent = new ASUIUnityEvent();
-            if (this.HideAnimationCompletedEvent == null) 
-                this.HideAnimationCompletedEvent = new ASUIUnityEvent();
-            if (this.DestroyEvent == null) 
-                this.DestroyEvent = new ASUIUnityEvent();
+            this.InitEvent ??= new ASUIUnityEvent();
+            this.ShowEvent ??= new ASUIUnityEvent();
+            this.ShowAnimationCompletedEvent ??= new ASUIUnityEvent();
+            this.HideEvent ??= new ASUIUnityEvent();
+            this.HideAnimationCompletedEvent ??= new ASUIUnityEvent();
+            this.DestroyEvent ??= new ASUIUnityEvent();
         }
         public abstract void OnInit();
 
-        public virtual void Show()
+        public virtual async Task Show()
         {
             this.GameObject.SetActive(true);
             this.OnShow();
             this.ShowEvent?.Invoke();
+            if (!IsShow)
+            {
+                await Observable.EveryUpdate()
+                    .FirstAsync(_ => IsShow); // 等待直到IsShow为true
+            }
         }
         public abstract void OnShow();
 
-        public virtual void Hide()
+        public virtual async Task Hide()
         {
             this.OnHide();
             this.HideEvent?.Invoke();
+            if (IsVisible)
+            {
+                await Observable.EveryUpdate()
+                    .FirstAsync(_ => !IsVisible); // 等待直到IsVisible为false
+            }
         }
         public abstract void OnHide();
-        public virtual void Destroy(bool immediately)
+        public virtual async Task Destroy(bool immediately)
         {
-            if (!this.IsVisible || (this.IsVisible && immediately))
+            if (!this.IsVisible || immediately)
             {
                 this.DestroyImmediately();
             }
             else
             {
-                this.m_DestroyWhenHideCompleted = true;
-                this.Hide();
+                await this.Hide();
+                this.DestroyImmediately();
             }
         }
 
@@ -113,17 +113,25 @@ namespace ASUI
             this.m_isInitialized = false;
             this.DestroyEvent?.Invoke();
             this.RemoveAllListeners();
+            if(this.Children != null)
+            {
+                foreach (var widget in this.Children)
+                {
+                    widget.DestroyImmediately();
+                }
+            }
+            this.Children = null;
             GameObject.Destroy(this.GameObject);
         }
 
         private void RemoveAllListeners()
         {
-            this.InitEvent.RemoveAllListeners();
-            this.ShowEvent.RemoveAllListeners();
-            this.ShowAnimationCompletedEvent.RemoveAllListeners();
-            this.HideEvent.RemoveAllListeners();
-            this.HideAnimationCompletedEvent.RemoveAllListeners();
-            this.DestroyEvent.RemoveAllListeners();
+            this.InitEvent?.RemoveAllListeners();
+            this.ShowEvent?.RemoveAllListeners();
+            this.ShowAnimationCompletedEvent?.RemoveAllListeners();
+            this.HideEvent?.RemoveAllListeners();
+            this.HideAnimationCompletedEvent?.RemoveAllListeners();
+            this.DestroyEvent?.RemoveAllListeners();
             this.InitEvent = null;
             this.ShowEvent = null;
             this.ShowAnimationCompletedEvent = null;
@@ -135,6 +143,25 @@ namespace ASUI
         public abstract void OnDestroy();
 
         public abstract void ApplyStyle();
+
+        public T CreateWidget<T>(GameObject gameObject) where T : WidgetsBase, new()
+        {
+            T widget = new();
+            widget.Init(gameObject);
+            this.Children ??= new List<WidgetsBase>();
+            this.Children.Add(widget);
+            return widget;
+        }
+
+        public async Task DestroyWidget(WidgetsBase widgetsBase, bool immediately = false)
+        {
+            if (this.Children != null)
+            {
+                if (this.Children.Contains(widgetsBase))
+                    this.Children.Remove(widgetsBase);
+            }
+            await widgetsBase.Destroy(immediately);
+        }
 
     }
     [Serializable]
@@ -150,21 +177,21 @@ namespace ASUI
 
     public interface IASUIShow
     {
-        public void Show();
+        public Task Show();
         public void OnShow();
         public ASUIUnityEvent ShowEvent { get; set; }
     }
 
     public interface IASUIHide
     {
-        public void Hide();
+        public Task Hide();
         public void OnHide();
         public ASUIUnityEvent HideEvent { get; set; }
     }
 
     public interface IASUIDestroy
     {
-        public void Destroy(bool immediately);
+        public Task Destroy(bool immediately);
         public void OnDestroy();
         public ASUIUnityEvent DestroyEvent { get; set; }
     }

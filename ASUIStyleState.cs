@@ -68,8 +68,8 @@ namespace ASUI
 
         public ASUIInfo(string UIName,Component component)
         {
-            this .UIName = UIName;
-            this .Component = component;
+            this.UIName = UIName;
+            this.Component = component;
         }
     }
 }
