@@ -11,14 +11,39 @@ using UnityEngine.SceneManagement;
 
 namespace ASUI
 {
+    public enum WidgetState
+    {
+        Uninitialized = 0,
+        Entering = 1,
+        Show = 2,
+        Exiting = 3,
+        Hide = 4,
+        Destroyed = 5,
+    }
     public abstract class WidgetsBase : IASUIInit, IASUIShow, IASUIHide, IASUIDestroy
     {
-        private bool m_isInitialized;
-        public bool IsInitialized { get => m_isInitialized;}
+        private WidgetState m_WidgetState = WidgetState.Uninitialized;
+        public WidgetState WidgetState{ get => m_WidgetState; set => m_WidgetState = value;}
+        public bool IsInitialized { get => WidgetState != WidgetState.Uninitialized; }
 
+        /// <summary>
+        /// 是否可被玩家清晰识别到
+        /// 由于动画的原因，可能有些UI元素Entering时在屏幕外或是透明状态，需要一定时间才可见
+        /// 因此是否可见需要在具体的子类中判断并实现
+        /// </summary>
         public abstract bool IsVisible { get; }
 
-        public abstract bool IsShow { get; }
+        /// <summary>
+        /// 是否出现
+        /// 只要脱离Hide状态就算出现,包括Entering和Show状态
+        /// </summary>
+        public bool IsShow 
+        {
+            get =>
+                (WidgetState == WidgetState.Entering ||
+                WidgetState == WidgetState.Show) &&
+                this.GameObject.activeInHierarchy;
+        }
 
         [SerializeField]
         private ASUIUnityEvent m_InitEvent;
@@ -40,27 +65,26 @@ namespace ASUI
         public ASUIUnityEvent DestroyEvent { get => m_DestroyEvent; set => m_DestroyEvent = value; }
 
         private GameObject m_GameObject;
-        public GameObject GameObject { get => m_GameObject; set => m_GameObject = value;}
+        public GameObject GameObject { get => m_GameObject; private set => m_GameObject = value;}
         public Transform Transform { get => m_GameObject.transform; }
 
         public ASUIStyleState styleState;
         public ASUIStyleState StyleState { get => styleState; set => styleState = value; }
 
-        private List<WidgetsBase> m_widgetsCollection;
-        public List<WidgetsBase> Children { get => m_widgetsCollection; set => m_widgetsCollection = value; }
+        private List<WidgetsBase> m_children;
+        public List<WidgetsBase> Children { get => m_children; set => m_children = value; }
 
         public virtual void Init(GameObject gameObject)
         {
             this.m_GameObject = gameObject;
-            if (!gameObject.activeSelf)
-                this.m_GameObject.SetActive(true);
+            this.styleState = this.Transform.GetComponent<ASUIStyleState>();
             this.InstantiateUnityEvent();
-            this.m_isInitialized = true;
+            this.WidgetState = WidgetState.Hide;
             this.OnInit();
         }
         private void InstantiateUnityEvent()
         {
-            if (this.m_isInitialized)
+            if (this.IsInitialized)
                 return;
             this.InitEvent ??= new ASUIUnityEvent();
             this.ShowEvent ??= new ASUIUnityEvent();
@@ -76,10 +100,10 @@ namespace ASUI
             this.GameObject.SetActive(true);
             this.OnShow();
             this.ShowEvent?.Invoke();
-            if (!IsShow)
+            if (WidgetState == WidgetState.Entering)
             {
                 await Observable.EveryUpdate()
-                    .FirstAsync(_ => IsShow); // 等待直到IsShow为true
+                    .FirstAsync(_ => WidgetState != WidgetState.Entering); // 等待直到退出Entering状态
             }
         }
         public abstract void OnShow();
@@ -88,16 +112,19 @@ namespace ASUI
         {
             this.OnHide();
             this.HideEvent?.Invoke();
-            if (IsVisible)
+            if (WidgetState == WidgetState.Exiting)
             {
                 await Observable.EveryUpdate()
-                    .FirstAsync(_ => !IsVisible); // 等待直到IsVisible为false
+                    .FirstAsync(_ => WidgetState != WidgetState.Exiting); // 等待直到退出Exiting状态
             }
+            this.GameObject.SetActive(false);
         }
         public abstract void OnHide();
         public virtual async Task Destroy(bool immediately)
         {
-            if (!this.IsVisible || immediately)
+            if (this.WidgetState == WidgetState.Uninitialized ||
+                this.WidgetState == WidgetState.Hide ||
+                immediately)
             {
                 this.DestroyImmediately();
             }
@@ -110,7 +137,7 @@ namespace ASUI
 
         public virtual void DestroyImmediately()
         {
-            this.m_isInitialized = false;
+            this.WidgetState = WidgetState.Destroyed;
             this.DestroyEvent?.Invoke();
             this.RemoveAllListeners();
             if(this.Children != null)

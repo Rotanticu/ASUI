@@ -4,6 +4,8 @@ using R3;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
+using TMPro;
 
 public class TestMonoLaunch : MonoBehaviour
 {
@@ -16,6 +18,24 @@ public class TestMonoLaunch : MonoBehaviour
     testASUIAnimatableValue testASUIAnimatableValue = new testASUIAnimatableValue();
     public void Awake()
     {
+        //DoTween≤‚ ‘
+        var tweener = DOTween.To(()=> DamperVelocitySlider.normalizedValue, (x) => DamperVelocitySlider.normalizedValue = x, DamperSlider.normalizedValue, 5);
+        tweener.SetAutoKill(false);
+        DamperSlider.OnValueChangedAsObservable().Subscribe((value) =>
+        {
+            tweener.ChangeStartValue(DamperVelocitySlider.normalizedValue);
+            tweener.ChangeEndValue(DamperSlider.normalizedValue, true);
+            if (ControllerSlider.normalizedValue < 0.5f)
+            {
+                if (!tweener.IsPlaying())
+                    tweener.PlayBackwards();
+            }
+            else
+                if (!tweener.IsPlaying())
+                tweener.PlayForward();
+        });
+
+        //LDamper≤‚ ‘
         LDamper.CreateDamper(
             () =>
             DamperSlider.normalizedValue,
@@ -24,11 +44,13 @@ public class TestMonoLaunch : MonoBehaviour
             () =>
             ControllerSlider.normalizedValue).WithSpring(SpringType.SimpleSpring).WithHalfTime(0.1665d).RunWithoutBinding();
         //Observable.TimerFrame(0,1, UnityFrameProvider.FixedUpdate).Take(10).Subscribe((x)=>UpdateDamper());
+
+        //Observable≤‚ ‘
         mainWindow.Init(windowGameObject);
         Observable<Unit> btnObservable = ShowHideButton.OnClickAsObservable();
         btnObservable.Subscribe((_) =>
         {
-            if (mainWindow.WindowState is ASUIWindowState.IsShow or ASUIWindowState.IsShowAnimating)
+            if (mainWindow.WidgetState is WidgetState.Show or WidgetState.Entering)
             {
                 mainWindow.Hide();
             }
@@ -53,7 +75,7 @@ public class TestMonoLaunch : MonoBehaviour
         testASUIAnimatableValue.StartValue = 1;
         testASUIAnimatableValue.EndValue = 0;
         testASUIAnimatableValue.CurrentValue = mainWindow.canvasGroup.alpha;
-        testASUIAnimatableValue.Ease = Ease.InQuad;
+        testASUIAnimatableValue.Ease = LitDamper.Ease.InQuad;
         testASUIAnimatableValue.InterpolationTime = 0;
         Observable.TimerFrame(0, 1, UnityFrameProvider.Update).Subscribe((x) =>
         {

@@ -89,7 +89,7 @@ namespace ASUI
             {
                 return;
             }
-            if (this.WindowState == ASUIWindowState.IsShowAnimating)
+            if (this.WidgetState == WidgetState.Entering)
             {
                 if (this.canvasGroup.alpha < 1)
                 {
@@ -100,7 +100,7 @@ namespace ASUI
                     this.ShowAnimationCompleted();
                 }
             }
-            if (this.WindowState == ASUIWindowState.IsHideAnimating)
+            if (this.WidgetState == WidgetState.Exiting)
             {
                 if (this.canvasGroup.alpha > 0)
                 {
