@@ -19,10 +19,10 @@ namespace ASUI
         [ContextMenu("OnInit")]
         public override void OnInit()
         {
-            this.styleState = this.Transform.GetComponent<ASUIStyleState>();
-            this.canvasGroup = this.styleState.GetComponentByUIName<CanvasGroup>("Canvas");
-            this.HeadText = this.styleState.GetComponentByUIName<TextMeshProUGUI>("HeadText");
-            this.Button = this.styleState.GetComponentByUIName<Button>("Button");
+            this.StyleState = this.Transform.GetComponent<ASUIStyleState>();
+            this.canvasGroup = this.StyleState.GetComponentByUIName<CanvasGroup>("Canvas");
+            this.HeadText = this.StyleState.GetComponentByUIName<TextMeshProUGUI>("HeadText");
+            this.Button = this.StyleState.GetComponentByUIName<Button>("Button");
             this.Button.onClick.AddListener(this.RefreshTime);
         }
 

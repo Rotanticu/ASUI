@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using TMPro;
+using System.Threading.Tasks;
 
 public class TestMonoLaunch : MonoBehaviour
 {
@@ -15,10 +16,9 @@ public class TestMonoLaunch : MonoBehaviour
     public Button ShowHideButton;
     public Button SwitchStateButton;
 
-    testASUIAnimatableValue testASUIAnimatableValue = new testASUIAnimatableValue();
     public void Awake()
     {
-        //DoTween²âÊÔ
+        //DoTweenï¿½ï¿½ï¿½ï¿½
         var tweener = DOTween.To(()=> DamperVelocitySlider.normalizedValue, (x) => DamperVelocitySlider.normalizedValue = x, DamperSlider.normalizedValue, 5);
         tweener.SetAutoKill(false);
         DamperSlider.OnValueChangedAsObservable().Subscribe((value) =>
@@ -35,7 +35,7 @@ public class TestMonoLaunch : MonoBehaviour
                 tweener.PlayForward();
         });
 
-        //LDamper²âÊÔ
+        //LDamperï¿½ï¿½ï¿½ï¿½
         LDamper.CreateDamper(
             () =>
             DamperSlider.normalizedValue,
@@ -45,67 +45,18 @@ public class TestMonoLaunch : MonoBehaviour
             ControllerSlider.normalizedValue).WithSpring(SpringType.SimpleSpring).WithHalfTime(0.1665d).RunWithoutBinding();
         //Observable.TimerFrame(0,1, UnityFrameProvider.FixedUpdate).Take(10).Subscribe((x)=>UpdateDamper());
 
-        //Observable²âÊÔ
+        //Observableï¿½ï¿½ï¿½ï¿½
         mainWindow.Init(windowGameObject);
         Observable<Unit> btnObservable = ShowHideButton.OnClickAsObservable();
-        btnObservable.Subscribe((_) =>
+        btnObservable.Subscribe(async (_) =>
         {
             if (mainWindow.WidgetState is WidgetState.Show or WidgetState.Entering)
             {
-                mainWindow.Hide();
+                await mainWindow.Hide();
             }
             else
             {
-                mainWindow.Show();
-            }
-        });
-        SwitchStateButton.OnClickAsObservable().Subscribe((_) =>
-        {
-            //if (mainWindow.CurrentState == "state1")
-            //    (mainWindow as IASUIStateSwitch).SwitchToState("state2");
-            //else
-            //    (mainWindow as IASUIStateSwitch).SwitchToState("state1");
-
-            if (testASUIAnimatableValue.AnimationSpeed <= 0)
-                testASUIAnimatableValue.AnimationSpeed = 0.01f;
-            else
-                testASUIAnimatableValue.AnimationSpeed = -0.01f;
-        });
-
-        testASUIAnimatableValue.StartValue = 1;
-        testASUIAnimatableValue.EndValue = 0;
-        testASUIAnimatableValue.CurrentValue = mainWindow.canvasGroup.alpha;
-        testASUIAnimatableValue.Ease = LitDamper.Ease.InQuad;
-        testASUIAnimatableValue.InterpolationTime = 0;
-        Observable.TimerFrame(0, 1, UnityFrameProvider.Update).Subscribe((x) =>
-        {
-            if (testASUIAnimatableValue.IsAnimating)
-            {
-                var t = testASUIAnimatableValue.InterpolationTime;
-                t += testASUIAnimatableValue.AnimationSpeed;
-                if (t < 0)
-                {
-                    t = 0;
-                    testASUIAnimatableValue.CurrentValue = testASUIAnimatableValue.StartValue;
-                    return;
-                }
-                else if (t == 0)
-                {
-                    return;
-                }
-                else if (t > 1)
-                {
-                    t = 1;
-                    testASUIAnimatableValue.CurrentValue = testASUIAnimatableValue.EndValue;
-                    return;
-                }
-                else if (t == 1)
-                {
-                    return;
-                }
-                testASUIAnimatableValue.CurrentValue = Mathf.Lerp(testASUIAnimatableValue.StartValue, testASUIAnimatableValue.EndValue, EaseUtility.Evaluate(t, testASUIAnimatableValue.Ease));
-                mainWindow.canvasGroup.alpha = testASUIAnimatableValue.CurrentValue;
-                testASUIAnimatableValue.InterpolationTime = t;
+                await mainWindow.Show();
             }
         });
     }
@@ -115,7 +66,7 @@ public class TestMonoLaunch : MonoBehaviour
     public Slider DamperVelocitySlider;
 
 
-    //PID²ÎÊý
+    //PIDï¿½ï¿½ï¿½ï¿½
     private bool isInMotion = false;
     private float motionTime = 0;
 
@@ -172,9 +123,9 @@ public class TestMonoLaunch : MonoBehaviour
     {
     }
 
-    public void Show() { mainWindow.Show(); }
-    public void Hide() { mainWindow.Hide(); }
-    public void Destroy() { mainWindow.Destroy(false); }
+    public async Task Show() { await mainWindow.Show(); }
+    public async Task Hide() { await mainWindow.Hide(); }
+    public async Task Destroy() { await mainWindow.Destroy(false); }
 
     public static bool Approximately(float a, float b,float precision)
     {

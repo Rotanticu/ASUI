@@ -68,8 +68,22 @@ namespace ASUI
         public GameObject GameObject { get => m_GameObject; private set => m_GameObject = value;}
         public Transform Transform { get => m_GameObject.transform; }
 
-        public ASUIStyleState styleState;
-        public ASUIStyleState StyleState { get => styleState; set => styleState = value; }
+        private ASUIStyleState m_styleState;
+        public ASUIStyleState StyleState { 
+            get
+            {
+                if(m_styleState == null)
+                {
+                    m_styleState = this.GameObject.GetComponent<ASUIStyleState>();
+                    if (m_styleState == null)
+                    {
+                        Debug.Log($"{this.GameObject?.name}没有ASUIStyleState组件");
+                        return null;
+                    }
+                }
+                return m_styleState;
+            } 
+            set => m_styleState = value; }
 
         private List<WidgetsBase> m_children;
         public List<WidgetsBase> Children { get => m_children; set => m_children = value; }
@@ -77,7 +91,7 @@ namespace ASUI
         public virtual void Init(GameObject gameObject)
         {
             this.m_GameObject = gameObject;
-            this.styleState = this.Transform.GetComponent<ASUIStyleState>();
+            this.m_styleState = this.Transform.GetComponent<ASUIStyleState>();
             this.InstantiateUnityEvent();
             this.WidgetState = WidgetState.Hide;
             this.OnInit();
@@ -106,7 +120,10 @@ namespace ASUI
                     .FirstAsync(_ => WidgetState != WidgetState.Entering); // 等待直到退出Entering状态
             }
         }
-        public abstract void OnShow();
+        public virtual void OnShow()
+        {
+
+        }
 
         public virtual async Task Hide()
         {
@@ -119,7 +136,10 @@ namespace ASUI
             }
             this.GameObject.SetActive(false);
         }
-        public abstract void OnHide();
+        public virtual void OnHide()
+        {
+
+        }
         public virtual async Task Destroy(bool immediately)
         {
             if (this.WidgetState == WidgetState.Uninitialized ||
@@ -167,9 +187,15 @@ namespace ASUI
             this.DestroyEvent = null;
         }
 
-        public abstract void OnDestroy();
+        public virtual void OnDestroy()
+        {
 
-        public abstract void ApplyStyle();
+        }
+
+        public virtual void ApplyStyle()
+        {
+
+        }
 
         public T CreateWidget<T>(GameObject gameObject) where T : WidgetsBase, new()
         {
