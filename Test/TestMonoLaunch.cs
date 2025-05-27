@@ -1,5 +1,5 @@
 using ASUI;
-using LitDamper;
+using LitMotion;
 using R3;
 using System;
 using UnityEngine;
@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using DG.Tweening;
 using TMPro;
 using System.Threading.Tasks;
+using LitMotion.Extensions;
 
 public class TestMonoLaunch : MonoBehaviour
 {
@@ -35,14 +36,6 @@ public class TestMonoLaunch : MonoBehaviour
                 tweener.PlayForward();
         });
 
-        //LDamper����
-        LDamper.CreateDamper(
-            () =>
-            DamperSlider.normalizedValue,
-            (value) =>
-            DamperSlider.normalizedValue = (float)value,
-            () =>
-            ControllerSlider.normalizedValue).WithSpring(SpringType.SimpleSpring).WithHalfTime(0.1665d).RunWithoutBinding();
         //Observable.TimerFrame(0,1, UnityFrameProvider.FixedUpdate).Take(10).Subscribe((x)=>UpdateDamper());
 
         //Observable����
@@ -95,7 +88,7 @@ public class TestMonoLaunch : MonoBehaviour
         double startValue = DamperSlider.normalizedValue;
         //DamperSlider.normalizedValue = (float)DamperUtility.DoubleSpringDamperImplicit(startValue,ref dampVelocity,ref xi, ref vi,ControllerSlider.normalizedValue, HalfLife,(double)Time.deltaTime);
         //DamperSlider.normalizedValue = (float)DamperUtility.VelocitySpringDamperImplicit(startValue, ref dampVelocity, ref xi, ControllerSlider.normalizedValue, TargetVelocity, HalfLife, (double)Time.deltaTime);
-        DamperSlider.normalizedValue = (float)DamperUtility.SimpleSpringDamperImplicit(startValue, ref dampVelocity, ControllerSlider.normalizedValue, HalfLife, (double)Time.deltaTime);
+        //DamperSlider.normalizedValue = (float)DamperUtility.SimpleSpringDamperImplicit(startValue, ref dampVelocity, ControllerSlider.normalizedValue, HalfLife, (double)Time.deltaTime);
         if (DamperVelocitySlider.maxValue < dampVelocity)
         {
             DamperVelocitySlider.maxValue = (float)dampVelocity * 2f;

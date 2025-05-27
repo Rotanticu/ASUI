@@ -1,9 +1,8 @@
-using LitDamper;
-using LitDamper.Extensions;
 using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using LitMotion;
 
 namespace ASUI
 {
@@ -28,14 +27,14 @@ namespace ASUI
 
         public void RefreshTime()
         {
-            this.HeadText.text = $"现在的时间是{DateTime.Now.ToString("HH:mm:ss")}";
+            this.HeadText.text = $"锟斤拷锟节碉拷时锟斤拷锟斤拷{DateTime.Now.ToString("HH:mm:ss")}";
         }
         public override void OnShow()
         {
-            this.HeadText.text = $"现在的时间是{DateTime.Now.ToString("HH:mm:ss")}";
+            this.HeadText.text = $"锟斤拷锟节碉拷时锟斤拷锟斤拷{DateTime.Now.ToString("HH:mm:ss")}";
         }
         private float fadeDuration = 2f;
-        private LitDamper.DamperHandle showMotion;
+        private MotionHandle showMotion;
         public override void PlayShowAnimation()
         {
             m_IsUpdateFade = true;
@@ -61,7 +60,7 @@ namespace ASUI
         {
             Debug.Log("Hide");
         }
-        private LitDamper.DamperHandle hideMotion;
+        private MotionHandle hideMotion;
         public override void PlayHideAnimation()
         {
             m_IsUpdateFade = true;
