@@ -1,22 +1,19 @@
 using UnityEditor;
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System;
 using TMPro;
 using UnityEngine.UI;
-using NUnit.Framework;
 using UnityEditorInternal;
 using System.Reflection;
-using Codice.Client.BaseCommands;
 
 namespace ASUI
 {
     [CustomEditor(typeof(ASUIStyleState))]
     public class ASUIStyleStateEditor : Editor
     {
-        //ÓÅÏÈÑ¡ÖÐÄÄÐ©×é¼þ
+        //ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½Ð©ï¿½ï¿½ï¿½
         public static List<Type> PrioritySelectionComponentTypeList = new List<Type>()
         {
             typeof(TextMeshProUGUI),
@@ -26,27 +23,27 @@ namespace ASUI
             typeof(RawImage),
         };
         /// <summary>
-        /// ÊÇ·ñ×é¼þÖµ¸Ä±ä
+        /// ï¿½Ç·ï¿½ï¿½ï¿½ï¿½Öµï¿½Ä±ï¿½
         /// </summary>
         private bool isDirty;
         /// <summary>
-        /// Ã¿Ò»¸öASUIInfoµ±Ç°Ñ¡ÔñµÄ×é¼þÀàÐÍ
+        /// Ã¿Ò»ï¿½ï¿½ASUIInfoï¿½ï¿½Ç°Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         /// </summary>
         private Dictionary<GameObject, Type> selectedComponent = new Dictionary<GameObject, Type>();
         /// <summary>
-        /// Ã¿¸ö×é¼þ¶ÔÓ¦µÄASUIStyleÉìËõÎÄ¼þ¼ÐÊÇ·ñÕ¹¿ª
+        /// Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ASUIStyleï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Õ¹ï¿½ï¿½
         /// </summary>
         private readonly Dictionary<Component, bool> styleEditorFolderState = new Dictionary<Component, bool>();
         /// <summary>
-        /// UnityÃæ°åÉÏ¿ÉÒÔ¸ü¸ÄË³ÐòµÄList
+        /// Unityï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ï¿½Ô¸ï¿½ï¿½ï¿½Ë³ï¿½ï¿½ï¿½List
         /// </summary>
         private ReorderableList reorderableList;
         /// <summary>
-        /// ±à¼­Æ÷Ä¿±ê¶ÔÏó
+        /// ï¿½à¼­ï¿½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½
         /// </summary>
         private ASUIStyleState aSUIStyleState;
         /// <summary>
-        /// ±£´æ²»Í¬×´Ì¬¸÷¸ö×é¼þÑùÊ½µÄ×Öµä
+        /// ï¿½ï¿½ï¿½æ²»Í¬×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½Öµï¿½
         /// </summary>
         private StringToDictionaryIASUIStyleSerializedDictionary StateStyleDictionary => aSUIStyleState.StateStyleDictionary;
         public void OnEnable()
@@ -66,7 +63,7 @@ namespace ASUI
             DrawStateStyleFolderList();
             DrawSaveAndDeleteStateStyleButton();
             EditorGUILayout.BeginHorizontal();
-            //Èç¹ûÓÐÐÞ¸Ä£¬¾Í±£´æÏÂ
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸Ä£ï¿½ï¿½Í±ï¿½ï¿½ï¿½ï¿½ï¿½
             if (isDirty)
             {
                 EditorUtility.SetDirty(serializedObject.targetObject);
@@ -74,7 +71,7 @@ namespace ASUI
             serializedObject.ApplyModifiedProperties();
         }
         /// <summary>
-        /// »æÖÆASUIInfo±íÍ·
+        /// ï¿½ï¿½ï¿½ï¿½ASUIInfoï¿½ï¿½Í·
         /// </summary>
         private void DrawASUIInfoListHead()
         {
@@ -88,17 +85,17 @@ namespace ASUI
         }
 
         /// <summary>
-        /// »æÖÆASUIInfoÁÐ±í
+        /// ï¿½ï¿½ï¿½ï¿½ASUIInfoï¿½Ð±ï¿½
         /// </summary>
         private void DrawASUIInfoReorderableList()
         {
             reorderableList.drawHeaderCallback = (Rect rect) =>
             {
-                EditorGUI.LabelField(rect, "ÐèÒªÅäÖÃ×´Ì¬µÄUIÁÐ±í");
+                EditorGUI.LabelField(rect, "ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½UIï¿½Ð±ï¿½");
             };
             reorderableList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
-                // »ñÈ¡µÚindex¸öelement
+                // ï¿½ï¿½È¡ï¿½ï¿½indexï¿½ï¿½element
                 SerializedProperty element = reorderableList.serializedProperty.GetArrayElementAtIndex(index);
                 Component oldComponent = element.FindPropertyRelative("Component").objectReferenceValue as Component;
 
@@ -129,25 +126,25 @@ namespace ASUI
             reorderableList.DoLayoutList();
         }
         /// <summary>
-        /// »æÖÆÍÏ×§ÌáÊ¾ÇøÓò
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×§ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
         /// </summary>
         private void DrawDragArea()
         {
-            //¡°ÍÏ×§µ½ÕâÀïÌí¼Ó¡±£¬ÌáÊ¾ÇøÓò
+            //ï¿½ï¿½ï¿½ï¿½×§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¡ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
             GUIStyle helpStyle = new GUIStyle(EditorStyles.helpBox);
             helpStyle.alignment = TextAnchor.MiddleCenter;
             helpStyle.normal.textColor = Color.white;
             helpStyle.fontSize = 18;
             helpStyle.fontStyle = FontStyle.BoldAndItalic;
             helpStyle.border = GUI.skin.window.border;
-            EditorGUILayout.LabelField(GUIContent.none, new GUIContent("ÍÏ ×§ µ½ Õâ Àï Ìí ¼Ó"), helpStyle, GUILayout.Height(100), GUILayout.ExpandWidth(true));
-            //ÍÏ×§µ½ÇøÓòÊ±
+            EditorGUILayout.LabelField(GUIContent.none, new GUIContent("ï¿½ï¿½ ×§ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½"), helpStyle, GUILayout.Height(100), GUILayout.ExpandWidth(true));
+            //ï¿½ï¿½×§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±
             if (Event.current.type == EventType.DragUpdated)
             {
                 DragAndDrop.visualMode = DragAndDropVisualMode.Link;
                 Event.current.Use();
             }
-            //ÍÏ×§µ½ÇøÓòËÉ¿ªÊ±£¬Íù×ÖµäÀïÐÂÔöÏî
+            //ï¿½ï¿½×§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¿ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             else if (Event.current.type == EventType.DragPerform)
             {
                 // To consume drag data.
@@ -190,12 +187,12 @@ namespace ASUI
             }
         }
         /// <summary>
-        /// »æÖÆÇÐ»»×´Ì¬µÄÏÂÀ­²Ëµ¥ºÍµ±Ç°×´Ì¬Ãû
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½Íµï¿½Ç°×´Ì¬ï¿½ï¿½
         /// </summary>
         private void DrawSwitchStateDropdownButton()
         {
             EditorGUILayout.BeginHorizontal();
-            //Ö¸Ê¾µ±Ç°ÑùÊ½×´Ì¬
+            //Ö¸Ê¾ï¿½ï¿½Ç°ï¿½ï¿½Ê½×´Ì¬
             if (EditorGUILayout.DropdownButton(new GUIContent(aSUIStyleState.State), FocusType.Keyboard))
             {
                 GenericMenu componentMenu = new GenericMenu();
@@ -221,7 +218,7 @@ namespace ASUI
             EditorGUILayout.EndHorizontal();
         }
         /// <summary>
-        /// »æÖÆ×é¼þ¶ÔÓ¦µÄÑùÊ½ÎÄ¼þ¼Ð
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½Ê½ï¿½Ä¼ï¿½ï¿½ï¿½
         /// </summary>
         private void DrawStateStyleFolderList()
         {
@@ -247,20 +244,20 @@ namespace ASUI
             }
         }
         /// <summary>
-        /// »æÖÆ±£´æºÍÉ¾³ýÑùÊ½°´Å¥
+        /// ï¿½ï¿½ï¿½Æ±ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½Å¥
         /// </summary>
         private void DrawSaveAndDeleteStateStyleButton()
         {
-            //±£´æµ±Ç°×é¼þµÄÑùÊ½
-            if (GUILayout.Button(new GUIContent("±£´æÑùÊ½")))
+            //ï¿½ï¿½ï¿½æµ±Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½
+            if (GUILayout.Button(new GUIContent("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½")))
             {
                 if (string.IsNullOrEmpty(aSUIStyleState.State))
                 {
-                    EditorUtility.DisplayDialog("±£´æÑùÊ½", "Ã»ÓÐÃüÃûÑùÊ½,ÇëÃüÃûºó±£´æ", "ok");
+                    EditorUtility.DisplayDialog("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½", "Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ó±£´ï¿½", "ok");
                 }
                 else
                 {
-                    if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State) || EditorUtility.DisplayDialog("±£´æÑùÊ½", $"ÑùÊ½ {aSUIStyleState.State} ÒÑ´æÔÚ£¬È·¶¨¸²¸ÇÑùÊ½Âð£¿", "È·¶¨", "È¡Ïû"))
+                    if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State) || EditorUtility.DisplayDialog("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½", $"ï¿½ï¿½Ê½ {aSUIStyleState.State} ï¿½Ñ´ï¿½ï¿½Ú£ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½", "È·ï¿½ï¿½", "È¡ï¿½ï¿½"))
                     {
                         if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State))
                             StateStyleDictionary.Add(aSUIStyleState.State, new ComponentToIASUIStyleSerializedDictionary());
@@ -284,9 +281,9 @@ namespace ASUI
                     }
                 }
             }
-            if (GUILayout.Button(new GUIContent("É¾³ýÑùÊ½")))
+            if (GUILayout.Button(new GUIContent("É¾ï¿½ï¿½ï¿½ï¿½Ê½")))
             {
-                bool result = EditorUtility.DisplayDialog("É¾³ýÑùÊ½", $"È·¶¨ÒªÉ¾³ýÑùÊ½ {aSUIStyleState.State} Âð£¿", "È·¶¨", "È¡Ïû");
+                bool result = EditorUtility.DisplayDialog("É¾ï¿½ï¿½ï¿½ï¿½Ê½", $"È·ï¿½ï¿½ÒªÉ¾ï¿½ï¿½ï¿½ï¿½Ê½ {aSUIStyleState.State} ï¿½ï¿½", "È·ï¿½ï¿½", "È¡ï¿½ï¿½");
                 if (result)
                 {
                     if (StateStyleDictionary != null && StateStyleDictionary.ContainsKey(aSUIStyleState.State))
