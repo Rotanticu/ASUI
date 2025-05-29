@@ -6,29 +6,29 @@ using UnityEngine;
 namespace ASUI
 {
     /// <summary>
-    /// ¶¯»­×´Ì¬Ã¶¾Ù
+    /// åŠ¨ç”»çŠ¶æ€æšä¸¾
     /// </summary>
     public enum AnimationState
     {
-        uninitialized, // Î´³õÊ¼»¯
-        Playing,     // ²¥·ÅÖĞ
-        Pause,      // ÔİÍ£
-        Completed,   // ÒÑÍê³É
-        Idle,        // ¿ÕÏĞ
+        uninitialized, // æœªåˆå§‹åŒ–
+        Playing,     // æ’­æ”¾ä¸­
+        Pause,      // æš‚åœ
+        Completed,   // å·²å®Œæˆ
+        Idle,        // ç©ºé—²
     }
 
     public enum AnimationUpdateType
     {
         /// <summary>
-        /// //¶¯»­Æ÷Óë Update µ÷ÓÃÍ¬²½¸üĞÂ£¬ÆäËÙ¶ÈÓëµ±Ç°Ê±¼ä¿Ì¶ÈÒ»ÖÂ¡£Èç¹ûÊ±¼ä¿Ì¶È±äÂı£¬¶¯»­Ò²»áËæÖ®¼õÂıÒÔÆ¥Åä
+        /// åŠ¨ç”»å™¨ä¸ Update è°ƒç”¨åŒæ­¥æ›´æ–°ï¼Œå…¶é€Ÿåº¦ä¸å½“å‰æ—¶é—´åˆ»åº¦ä¸€è‡´ã€‚å¦‚æœæ—¶é—´åˆ»åº¦å˜æ…¢ï¼ŒåŠ¨ç”»ä¹Ÿä¼šéšä¹‹å‡æ…¢ä»¥åŒ¹é…
         /// </summary>
         TimeScaleUpdate,
         /// <summary>
-        /// /// //¶¯»­Æ÷Óë Update µ÷ÓÃÍ¬²½¸üĞÂ£¬µ«ÊÇËÙ¶ÈÓëµ±Ç°Ê±¼ä¿Ì¶ÈÎŞ¹Ø¡£Èç¹ûÊ±¼ä¿Ì¶È±äÂı£¬¶¯»­ÈÔÈ»»áÒÔÏàÍ¬µÄËÙ¶È²¥·Å
+        /// åŠ¨ç”»å™¨ä¸ Update è°ƒç”¨åŒæ­¥æ›´æ–°ï¼Œä½†æ˜¯é€Ÿåº¦ä¸å½“å‰æ—¶é—´åˆ»åº¦æ— å…³ã€‚å¦‚æœæ—¶é—´åˆ»åº¦å˜æ…¢ï¼ŒåŠ¨ç”»ä»ç„¶ä¼šä»¥ç›¸åŒçš„é€Ÿåº¦æ’­æ”¾
         /// </summary>
         UnscaledTimeUpdate,
         /// <summary>
-        /// /// //¶¯»­Æ÷Óë FixedUpdate µ÷ÓÃÍ¬²½¸üĞÂ£¨¼´ÓëÎïÀíÏµÍ³±£³Ö²½µ÷Ò»ÖÂ£©
+        /// åŠ¨ç”»å™¨ä¸ FixedUpdate è°ƒç”¨åŒæ­¥æ›´æ–°ï¼ˆå³ä¸ç‰©ç†ç³»ç»Ÿä¿æŒæ­¥è°ƒä¸€è‡´ï¼‰
         /// </summary>
         FixedUpdate,
     }
@@ -36,21 +36,21 @@ namespace ASUI
     public abstract class ASUIAnimationProcess<T> : IASUIAnimationBehavior
     {
         /// <summary>
-        /// ¶¯»­µÄµ±Ç°×´Ì¬
+        /// ï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Ç°×´Ì¬
         /// </summary>
         public AnimationState CurrentState { get; private set; } = AnimationState.uninitialized;
 
         /// <summary>
-        /// Ò»´ÎĞÔ¶¯»­»¹ÊÇ³ÖĞø¶¯»­»òĞèÒª¶à´Î²¥·ÅµÄ¶¯»­
-        /// Ò»´ÎĞÔ¶¯»­»áÔÚ²¥·ÅÍê³Éºó×Ô¶¯Ïú»Ù
-        /// ³ÖĞø¶¯»­»òĞèÒª¶à´Î²¥·ÅµÄ¶¯»­ĞèÒªÊÖ¶¯Ïú»Ù
+        /// ä¸€æ¬¡æ€§åŠ¨ç”»è¿˜æ˜¯æŒç»­åŠ¨ç”»æˆ–éœ€è¦å¤šæ¬¡æ’­æ”¾çš„åŠ¨ç”»
+        /// ä¸€æ¬¡æ€§åŠ¨ç”»ä¼šåœ¨æ’­æ”¾å®Œæˆåè‡ªåŠ¨é”€æ¯
+        /// æŒç»­åŠ¨ç”»æˆ–éœ€è¦å¤šæ¬¡æ’­æ”¾çš„åŠ¨ç”»éœ€è¦æ‰‹åŠ¨é”€æ¯
         /// </summary>
         public bool IsOnce = false;
 
         public AnimationUpdateType AnimationUpdateType = AnimationUpdateType.TimeScaleUpdate;
 
         /// <summary>
-        /// ¶¯»­µÄËÙ¶È
+        /// åŠ¨ç”»é€Ÿåº¦
         /// </summary>
         private float animationSpeed = 1f;
 
@@ -63,7 +63,7 @@ namespace ASUI
             protected set => m_animationDriver = value;
         }
         /// <summary>
-        /// ¿ªÊ¼²¥·Å¶¯»­
+        /// å¼€å§‹æ’­æ”¾åŠ¨ç”»
         /// </summary>
         public async Task PlayForward()
         {
@@ -82,7 +82,7 @@ namespace ASUI
         }
 
         /// <summary>
-        /// ÔİÍ£¶¯»­
+        /// æš‚åœåŠ¨ç”»
         /// </summary>
         public virtual void Pause()
         {
@@ -98,7 +98,7 @@ namespace ASUI
         }
 
         /// <summary>
-        /// È¡ÏûÔİÍ£¶¯»­
+        /// æ¢å¤åŠ¨ç”»
         /// </summary>
         public virtual void Resume()
         {
@@ -111,7 +111,7 @@ namespace ASUI
         }
 
         /// <summary>
-        /// Á¢¿Ì»Øµ½¶¯»­µÄÆğÊ¼×´Ì¬
+        /// é‡ç½®åŠ¨ç”»åˆ°åˆå§‹çŠ¶æ€
         /// </summary>
         public virtual void ReSet()
         {
@@ -121,8 +121,8 @@ namespace ASUI
             CurrentState = AnimationState.Idle;
         }
         /// <summary>
-        /// Á¢¿ÌÍê³É¶¯»­£¬»áÀ´µ½¶¯»­µÄ½áÊø×´Ì¬
-        /// withCompletedCallback: ÊÇ·ñµ÷ÓÃCompletedCallback
+        /// ç«‹åˆ»å®ŒæˆåŠ¨ç”»ï¼Œä¼šæ¥åˆ°åŠ¨ç”»çš„ç»“æŸçŠ¶æ€
+        /// withCompletedCallback: æ˜¯å¦è°ƒç”¨CompletedCallback
         /// </summary>
         public virtual void CompletedImmediately(bool withCompletedCallback)
         {
@@ -142,10 +142,10 @@ namespace ASUI
 
         }
 
-        ///// <summary>
-        /// µ¹·Å¶¯»­£¬²»ÄÜ±»´ò¶ÏµÄ¶¯»­¿ÉÒÔµ¹·Å
-        ///damp¶¯»­²»ÄÜµ¹·Å£¬²»ĞŞ¸Ä³õÊ¼½áÊøÖµµÄTween¿ÉÒÔµ¹·Å£¬UnityµÄAnim¿ÉÒÔµ¹·Å£¬ºóÁ½Õß²»ÄÜ±»´ò¶Ï
-        ///// </summary>
+        /// <summary>
+        /// å€’æ”¾åŠ¨ç”»ï¼Œä¸èƒ½è¢«æ‰“æ–­çš„åŠ¨ç”»å¯ä»¥å€’æ”¾
+        ///dampåŠ¨ç”»ä¸èƒ½å€’æ”¾ï¼Œä¸ä¿®æ”¹åˆå§‹ç»“æŸå€¼çš„Tweenå¯ä»¥å€’æ”¾ï¼ŒUnityçš„Animå¯ä»¥å€’æ”¾ï¼Œåä¸¤è€…ä¸èƒ½è¢«æ‰“æ–­
+        /// </summary>
         //public virtual async Task PlayBackwards()
         //{
         //    if (CurrentState == AnimationState.uninitialized)
@@ -161,33 +161,33 @@ namespace ASUI
         }
 
         /// <summary>
-        /// ³õÊ¼»¯¶¯»­Çı¶¯Æ÷
+        /// åˆå§‹åŒ–åŠ¨ç”»é©±åŠ¨å™¨
         /// </summary>
         protected abstract void InitializeAnimationDriver(bool isOnce, AnimationUpdateType animationUpdateType, float animationSpeed, Action completedCallback);
 
         /// <summary>
-        /// ¿ªÊ¼²¥·Å¶¯»­
+        /// å¼€å§‹æ’­æ”¾åŠ¨ç”»
         /// </summary>
         protected abstract void StartAnimationDriver();
 
         /// <summary>
-        /// È¡Ïû¶¯»­£¬Á¢¿Ì»Øµ½¶¯»­µÄÆğÊ¼×´Ì¬
+        /// å–æ¶ˆåŠ¨ç”»ï¼Œç«‹åˆ»å›åˆ°åŠ¨ç”»çš„èµ·å§‹çŠ¶æ€
         /// </summary>
         protected abstract void ReSetAnimationDriver();
 
         /// <summary>
-        /// Á¢¿ÌÍê³É¶¯»­£¬»áÀ´µ½¶¯»­µÄ½áÊø×´Ì¬
+        /// ç«‹åˆ»å®ŒæˆåŠ¨ç”»ï¼Œä¼šæ¥åˆ°åŠ¨ç”»çš„ç»“æŸçŠ¶æ€
         /// </summary>
         protected abstract void CompletedImmediatelyAnimationDriver(bool withCompletedCallback);
 
         /// <summary>
-        /// ÉèÖÃ¶¯»­²¥·ÅËÙ¶È
+        /// è®¾ç½®åŠ¨ç”»æ’­æ”¾é€Ÿåº¦
         /// </summary>
         /// <param name="speed"></param>
         protected abstract void SetAnimationDriverSpeed(float speed);
 
         /// <summary>
-        /// Ïú»Ù¶¯»­Çı¶¯Æ÷
+        /// é”€æ¯åŠ¨ç”»é©±åŠ¨å™¨
         /// </summary>
         public abstract void Kill();
     }
