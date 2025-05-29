@@ -33,7 +33,7 @@ namespace ASUI
         FixedUpdate,
     }
 
-    public abstract class ASUIAnimationProcess<T> : IASUIAnimationBehavior
+    public abstract class AnimationProcess<T> : IAnimationBehavior
     {
         /// <summary>
         /// �����ĵ�ǰ״̬

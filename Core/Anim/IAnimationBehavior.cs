@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace ASUI
 {
-    public interface IASUIAnimationBehavior
+    public interface IAnimationBehavior
     {
         public Task PlayForward();
         public void Pause();
