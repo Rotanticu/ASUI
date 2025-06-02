@@ -1,8 +1,5 @@
 using LitMotion;
-using LitMotion.Extensions;
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
 using System;
 using R3.Triggers;
 using R3;
@@ -10,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ASUI
 {
-    public class LitMotionAdapter<TValue, TOptions, TAdapter> : AnimationBuilder<TValue, Ease, LoopType, DelayType, AnimationUpdateType>, AnimationProcess<MotionHandle>
+    public class LitMotionAdapter<TValue, TOptions, TAdapter> : AnimationBuilder<TValue, Ease, LoopType, LitMotion.DelayType, AnimationUpdateType>, AnimationProcess<MotionHandle>
         where TValue : unmanaged
         where TOptions : unmanaged, IMotionOptions
         where TAdapter : unmanaged, IMotionAdapter<TValue, TOptions>
@@ -22,7 +19,7 @@ namespace ASUI
             this.IsOnce = false;
         }
 
-        public LitMotionAdapter(TValue from, TValue to, float duration, Ease ease = Ease.Linear, int loops = 0, LoopType loopType = LoopType.Restart, float delay = 0, DelayType delayType = DelayType.FirstLoop, AnimationUpdateType animationUpdateType = AnimationUpdateType.TimeScaleUpdate)
+        public LitMotionAdapter(TValue from, TValue to, float duration, Ease ease = Ease.Linear, int loops = 0, LoopType loopType = LoopType.Restart, float delay = 0, LitMotion.DelayType delayType = LitMotion.DelayType.FirstLoop, AnimationUpdateType animationUpdateType = AnimationUpdateType.TimeScaleUpdate)
         {
             this.MotionBuilder = LMotion.Create<TValue, TOptions, TAdapter>(from, to, duration)
                 .WithEase(ease)
@@ -102,9 +99,9 @@ namespace ASUI
             return this;
         }
         public override float Delay { get => motionHandle == MotionHandle.None ? MotionSettings.Delay : motionHandle.Delay; set => SetMotionSettingsDirty().MotionBuilder.WithDelay(value, DelayType); }
-        public override DelayType DelayType { get => MotionSettings.DelayType; set => SetMotionSettingsDirty().MotionBuilder.WithDelay(Delay, value); }
+        public override LitMotion.DelayType DelayType { get => MotionSettings.DelayType; set => SetMotionSettingsDirty().MotionBuilder.WithDelay(Delay, value); }
 
-        public LitMotionAdapter<TValue, TOptions, TAdapter> WithDelay(float delay, DelayType delayType)
+        public LitMotionAdapter<TValue, TOptions, TAdapter> WithDelay(float delay, LitMotion.DelayType delayType)
         {
             SetMotionSettingsDirty()
             .MotionBuilder.WithDelay(delay, delayType);
