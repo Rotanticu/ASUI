@@ -179,12 +179,10 @@ namespace ASUI.Test
             
             for (int i = 0; i < iterations; i++)
             {
-                float4 newVel = default;
                 float4 currentVal = (float4)currentValue;
                 float4 currentVel = (float4)currentVelocity;
                 float4 targetVal = (float4)targetValue;
-                float4 result = default;
-                SpringUtility.SpringSimple(deltaTime, ref currentVal, ref currentVel, ref targetVal, ref newVel, ref result, stiffness);
+                SpringUtility.SpringSimple(deltaTime, ref currentVal, ref currentVel, targetVal, stiffness);
                 // 稍微改变输入值以避免编译器优化
                 currentValue = new Vector4(currentValue.x + 0.0001f, currentValue.y + 0.0001f, currentValue.z + 0.0001f, currentValue.w + 0.0001f);
             }
@@ -210,7 +208,7 @@ namespace ASUI.Test
                 float4 targetVal = (float4)targetValue;
                 float4 targetVel = (float4)targetVelocity;
                 float4 result = default;
-                SpringUtility.SpringElastic(deltaTime, ref currentVal, ref currentVel, ref targetVal, ref newVel, ref targetVel, ref result, dampingRatio, stiffness);
+                SpringUtility.SpringElastic(deltaTime, ref currentVal, ref currentVel, targetVal, targetVel, dampingRatio, stiffness);
                 currentValue = new Vector4(currentValue.x + 0.0001f, currentValue.y + 0.0001f, currentValue.z + 0.0001f, currentValue.w + 0.0001f);
             }
             
@@ -229,12 +227,10 @@ namespace ASUI.Test
             
             for (int i = 0; i < iterations; i++)
             {
-                float4 newVel = default;
                 float4 currentVal = (float4)currentValue;
                 float4 currentVel = (float4)currentVelocity;
                 float4 targetVal = (float4)targetValue;
-                float4 result = default;
-                SpringUtility.SpringSimpleVelocitySmoothing(deltaTime, ref currentVal, ref currentVel, ref targetVal, ref newVel, ref intermediatePosition, ref result, 2.0f, stiffness);
+                SpringUtility.SpringSimpleVelocitySmoothing(deltaTime, ref currentVal, ref currentVel, targetVal, ref intermediatePosition, 2.0f, stiffness);
                 currentValue = new Vector4(currentValue.x + 0.0001f, currentValue.y + 0.0001f, currentValue.z + 0.0001f, currentValue.w + 0.0001f);
             }
             
@@ -253,12 +249,10 @@ namespace ASUI.Test
             
             for (int i = 0; i < iterations; i++)
             {
-                float4 newVel = default;
                 float4 currentVal = (float4)currentValue;
                 float4 currentVel = (float4)currentVelocity;
                 float4 targetVal = (float4)targetValue;
-                float4 result = default;
-                SpringUtility.SpringSimpleDurationLimit(deltaTime, ref currentVal, ref currentVel, ref targetVal, ref newVel, ref result, 0.2f);
+                SpringUtility.SpringSimpleDurationLimit(deltaTime, ref currentVal, ref currentVel, ref targetVal, 0.2f);
                 currentValue = new Vector4(currentValue.x + 0.0001f, currentValue.y + 0.0001f, currentValue.z + 0.0001f, currentValue.w + 0.0001f);
             }
             
@@ -271,19 +265,19 @@ namespace ASUI.Test
             var stopwatch = Stopwatch.StartNew();
             
             Vector4 currentValue = new Vector4(1, 2, 3, 4);
-            Vector4 currentVelocity = new Vector4(0.1f, 0.2f, 0.3f, 0.4f);
+            Vector4 currentVelocity = default;
             Vector4 targetValue = new Vector4(10, 20, 30, 40);
-            float4 intermediatePosition = new float4(5, 10, 15, 20);
-            float4 intermediateVelocity = new float4(0.05f, 0.1f, 0.15f, 0.2f);
+            Vector4 intermediatePosition = default;
+            Vector4 intermediateVelocity = default;
             
             for (int i = 0; i < iterations; i++)
             {
-                float4 newVel = default;
-                float4 currentVal = (float4)currentValue;
-                float4 currentVel = (float4)currentVelocity;
-                float4 targetVal = (float4)targetValue;
-                float4 result = default;
-                SpringUtility.SpringSimpleDoubleSmoothing(deltaTime, ref currentVal, ref currentVel, ref targetVal, ref newVel, ref intermediatePosition, ref intermediateVelocity, ref result, stiffness);
+                float4 currentVal = currentValue;
+                float4 currentVel = currentVelocity;
+                float4 targetVal = targetValue;
+                float4 intermediatePos = intermediatePosition;
+                float4 intermediateVel = intermediateVelocity;
+                SpringUtility.SpringSimpleDoubleSmoothing(deltaTime, ref currentVal, ref currentVel, targetVal, ref intermediatePos, ref intermediateVel, stiffness);
                 currentValue = new Vector4(currentValue.x + 0.0001f, currentValue.y + 0.0001f, currentValue.z + 0.0001f, currentValue.w + 0.0001f);
             }
             
@@ -304,7 +298,7 @@ namespace ASUI.Test
             
             for (int i = 0; i < iterations; i++)
             {
-                SpringUtility.SpringSimple(deltaTime, currentValue, currentVelocity, targetValue, out double newVel, stiffness);
+                SpringUtility.SpringSimple(deltaTime, ref currentValue, ref currentVelocity, targetValue, stiffness);
                 // 稍微改变输入值以避免编译器优化
                 currentValue += 0.0001f;
             }
@@ -327,7 +321,7 @@ namespace ASUI.Test
             
             for (int i = 0; i < iterations; i++)
             {
-                SpringUtility.SpringElastic(deltaTime, currentValue, currentVelocity, targetValue, out double newVel, targetVelocity, dampingRatio, stiffness);
+                SpringUtility.SpringElastic(deltaTime, ref currentValue, ref currentVelocity, targetValue, targetVelocity, dampingRatio, stiffness);
                 // 稍微改变输入值以避免编译器优化
                 currentValue += 0.0001f;
             }
@@ -346,11 +340,11 @@ namespace ASUI.Test
             float currentValue = 1.0f;
             float currentVelocity = 0.1f;
             float targetValue = 10.0f;
-            double intermediatePosition = 5.0d;
+            float intermediatePosition = 5.0f;
             
             for (int i = 0; i < iterations; i++)
             {
-                SpringUtility.SpringSimpleVelocitySmoothing(deltaTime, currentValue, currentVelocity, targetValue, out double newVel, ref intermediatePosition, 2.0f, stiffness);
+                SpringUtility.SpringSimpleVelocitySmoothing(deltaTime, ref currentValue, ref currentVelocity, targetValue, ref intermediatePosition, 2.0f, stiffness);
                 // 稍微改变输入值以避免编译器优化
                 currentValue += 0.0001f;
             }
@@ -372,7 +366,7 @@ namespace ASUI.Test
             
             for (int i = 0; i < iterations; i++)
             {
-                SpringUtility.SpringSimpleDurationLimit(deltaTime, currentValue, currentVelocity, targetValue, out double newVel, 0.2f);
+                SpringUtility.SpringSimpleDurationLimit(deltaTime, ref currentValue, ref currentVelocity, targetValue, 0.2f);
                 // 稍微改变输入值以避免编译器优化
                 currentValue += 0.0001f;
             }
@@ -391,12 +385,12 @@ namespace ASUI.Test
             float currentValue = 1.0f;
             float currentVelocity = 0.1f;
             float targetValue = 10.0f;
-            double intermediatePosition = 5.0d;
-            double intermediateVelocity = 0.05d;
+            float intermediatePosition = 5.0f;
+            float intermediateVelocity = 0.05f;
             
             for (int i = 0; i < iterations; i++)
             {
-                SpringUtility.SpringSimpleDoubleSmoothing(deltaTime, currentValue, currentVelocity, targetValue, out double newVel, ref intermediatePosition, ref intermediateVelocity, stiffness);
+                SpringUtility.SpringSimpleDoubleSmoothing(deltaTime, ref currentValue, ref currentVelocity, targetValue, ref intermediatePosition, ref intermediateVelocity, stiffness);
                 // 稍微改变输入值以避免编译器优化
                 currentValue += 0.0001f;
             }
