@@ -1,5 +1,5 @@
 using ASUI;
-using DG.Tweening;
+//using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Playables;
@@ -11,12 +11,18 @@ using LitMotion.Extensions;
 
 public class UIMainMenuWindow : ASUIWindowBase
 {
+    public UIMainTitle mainTitle;
     public override void OnInit()
     {
-
+        mainTitle = new UIMainTitle();
+        mainTitle.Init(this.StyleState.GetComponentByUIName<RectTransform>("tex_title").gameObject);
     }
     public override void OnShow()
     {
+        //mainTitle.TexTitle.AnimateColorTo(Color.red, 1f);
+        LMotion.Create(0f,1f,3f).ToObservable().Subscribe(x=>{
+            Debug.Log(x);
+        });
         // 使用DOTween实现动画
         //这部分相当于AnimBuilder
         // DOTweenAnimation dotweenAnimation = this.GameObject.AddComponent<DOTweenAnimation>();

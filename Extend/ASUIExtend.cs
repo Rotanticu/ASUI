@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using Codice.CM.Common;
+using LitMotion;
 
 namespace ASUI
 {
@@ -26,10 +26,10 @@ namespace ASUI
             }
         }
         
-        public static LitMotion.MotionBuilder<TValue,TOptions,TAdapter> WithUpdateType<TValue,TOptions,TAdapter>(this LitMotion.MotionBuilder<TValue,TOptions,TAdapter> motionBuilder, AnimationUpdateType animationUpdateType)
+        public static LitMotion.MotionBuilder<TValue,TOptions,TAdapter> WithUpdateType<TValue,VValue,TOptions, TAdapter>(this LitMotion.MotionBuilder<TValue,TOptions,TAdapter> motionBuilder, AnimationUpdateType animationUpdateType)
         where TValue : unmanaged
-        where TOptions : unmanaged, LitMotion.IMotionOptions
-        where TAdapter : unmanaged, LitMotion.IMotionAdapter<TValue, TOptions>
+        where TOptions : unmanaged, IMotionOptions
+        where TAdapter : unmanaged, IMotionAdapter<TValue, TOptions>
         {
             switch (animationUpdateType)
             {

@@ -4,7 +4,7 @@ using R3;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
-using DG.Tweening;
+//using DG.Tweening;
 using TMPro;
 using System.Threading.Tasks;
 using LitMotion.Extensions;
@@ -19,101 +19,60 @@ public class TestMonoLaunch : MonoBehaviour
 
     public void Awake()
     {
-        //DoTween����
-        var tweener = DOTween.To(()=> DamperVelocitySlider.normalizedValue, (x) => DamperVelocitySlider.normalizedValue = x, DamperSlider.normalizedValue, 5);
-        tweener.SetAutoKill(false);
-        DamperSlider.OnValueChangedAsObservable().Subscribe((value) =>
-        {
-            tweener.ChangeStartValue(DamperVelocitySlider.normalizedValue);
-            tweener.ChangeEndValue(DamperSlider.normalizedValue, true);
-            if (ControllerSlider.normalizedValue < 0.5f)
-            {
-                if (!tweener.IsPlaying())
-                    tweener.PlayBackwards();
-            }
-            else
-                if (!tweener.IsPlaying())
-                tweener.PlayForward();
-        });
 
-        //Observable.TimerFrame(0,1, UnityFrameProvider.FixedUpdate).Take(10).Subscribe((x)=>UpdateDamper());
-
-        //Observable����
-        mainWindow.Init(windowGameObject);
-        Observable<Unit> btnObservable = ShowHideButton.OnClickAsObservable();
-        btnObservable.Subscribe(async (_) =>
-        {
-            if (mainWindow.WidgetState is WidgetState.Show or WidgetState.Entering)
-            {
-                await mainWindow.Hide();
-            }
-            else
-            {
-                await mainWindow.Show();
-            }
-        });
     }
 
     public Slider ControllerSlider;
     public Slider DamperSlider;
     public Slider DamperVelocitySlider;
 
-
-    //PID����
-    private bool isInMotion = false;
-    private float motionTime = 0;
-
+    public RectTransform followTarget;
+    
+    // Spring动画变量
+    private MotionHandle followMotion;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        dampVelocity = 0;
-        xi = DamperSlider.normalizedValue;
+        var motion = LitMotion.LMotion.Spring.Create(DamperSlider.normalizedValue, ControllerSlider.normalizedValue, 1, LitMotion.SpringOptions.Underdamped).WithLoops(-1).Bind(x => DamperSlider.normalizedValue = x);
+        ControllerSlider.onValueChanged.AddListener(x => motion.SetEndValue<float, LitMotion.SpringOptions>(x));
     }
+    
     // Update is called once per frame
     void Update()
     {
-        //UpdateDamper();
-    }
-
-    public double HalfLife = 0.1665d;
-    public double TargetVelocity = 1d;
-    public double TargetTime = 1d;
-    public double Apprehension = 2d;
-    private double dampVelocity;
-    private double xi;
-    //private double vi;
-    public void UpdateDamper()
-    {
-        double startValue = DamperSlider.normalizedValue;
-        //DamperSlider.normalizedValue = (float)DamperUtility.DoubleSpringDamperImplicit(startValue,ref dampVelocity,ref xi, ref vi,ControllerSlider.normalizedValue, HalfLife,(double)Time.deltaTime);
-        //DamperSlider.normalizedValue = (float)DamperUtility.VelocitySpringDamperImplicit(startValue, ref dampVelocity, ref xi, ControllerSlider.normalizedValue, TargetVelocity, HalfLife, (double)Time.deltaTime);
-        //DamperSlider.normalizedValue = (float)DamperUtility.SimpleSpringDamperImplicit(startValue, ref dampVelocity, ControllerSlider.normalizedValue, HalfLife, (double)Time.deltaTime);
-        if (DamperVelocitySlider.maxValue < dampVelocity)
+        // 检测鼠标右键按下
+        if (Input.GetMouseButton(1)) // 右键按下
         {
-            DamperVelocitySlider.maxValue = (float)dampVelocity * 2f;
-        }
-        DamperVelocitySlider.value = Math.Abs((float)dampVelocity);
-
-        if(Approximately(DamperSlider.normalizedValue,ControllerSlider.normalizedValue,1e-3f) && isInMotion)
-        {
-            isInMotion = false;
-            Debug.Log($"motionTime = {motionTime}");
-            motionTime = 0;
-        }
-        if (!Approximately(DamperSlider.normalizedValue, ControllerSlider.normalizedValue, 1e-3f) && !isInMotion)
-        {
-            isInMotion = true;
-        }
-
-        if(isInMotion)
-        {
-            motionTime += Time.deltaTime;
+            // 获取鼠标在屏幕上的位置
+            Vector2 mouseScreenPos = Input.mousePosition;
+            
+            if (followMotion == MotionHandle.None)
+            {
+                // 创建2D Spring动画，让followTarget跟随鼠标位置
+                followMotion = LitMotion.LMotion.Spring.Create(
+                    (Vector2)followTarget.position,  // 起始位置
+                    mouseScreenPos,                  // 目标位置（鼠标位置）
+                    1.0f,                           // 持续时间
+                    LitMotion.SpringOptions.Underdamped  // 使用欠阻尼，有弹性效果
+                ).WithLoops(-1)
+                .Bind(pos => followTarget.position = pos);
+            }
+            else
+            {
+                // 更新目标位置
+                followMotion.SetEndValue<Vector2, LitMotion.SpringOptions>(mouseScreenPos);
+            }
         }
     }
+    public ReactiveProperty<Color> BackgroundColor = new ReactiveProperty<Color>(Color.white);
 
-    public void OnDestroy()
+    public void SetBackgroundColor()
     {
+        Func<Color> colorFunc = () =>
+        {
+            return UnityEngine.Random.ColorHSV();
+        };
     }
 
     public async Task Show() { await mainWindow.Show(); }

@@ -1,4 +1,3 @@
-using NUnit.Framework;
 using R3;
 using System;
 using System.Collections;
@@ -27,15 +26,15 @@ namespace ASUI
         public bool IsInitialized { get => WidgetState != WidgetState.Uninitialized; }
 
         /// <summary>
-        /// ÊÇ·ñ¿É±»Íæ¼ÒÇåÎúÊ¶±ðµ½
-        /// ÓÉÓÚ¶¯»­µÄÔ­Òò£¬¿ÉÄÜÓÐÐ©UIÔªËØEnteringÊ±ÔÚÆÁÄ»Íâ»òÊÇÍ¸Ã÷×´Ì¬£¬ÐèÒªÒ»¶¨Ê±¼ä²Å¿É¼û
-        /// Òò´ËÊÇ·ñ¿É¼ûÐèÒªÔÚ¾ßÌåµÄ×ÓÀàÖÐÅÐ¶Ï²¢ÊµÏÖ
+        /// ï¿½Ç·ï¿½É±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¶ï¿½ï¿½
+        /// ï¿½ï¿½ï¿½Ú¶ï¿½ï¿½ï¿½ï¿½ï¿½Ô­ï¿½ò£¬¿ï¿½ï¿½ï¿½ï¿½ï¿½Ð©UIÔªï¿½ï¿½EnteringÊ±ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½ÒªÒ»ï¿½ï¿½Ê±ï¿½ï¿½Å¿É¼ï¿½
+        /// ï¿½ï¿½ï¿½ï¿½Ç·ï¿½É¼ï¿½ï¿½ï¿½Òªï¿½Ú¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï²ï¿½Êµï¿½ï¿½
         /// </summary>
         public abstract bool IsVisible { get; }
 
         /// <summary>
-        /// ÊÇ·ñ³öÏÖ
-        /// Ö»ÒªÍÑÀëHide×´Ì¬¾ÍËã³öÏÖ,°üÀ¨EnteringºÍShow×´Ì¬
+        /// ï¿½Ç·ï¿½ï¿½ï¿½ï¿½
+        /// Ö»Òªï¿½ï¿½ï¿½ï¿½Hide×´Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½Enteringï¿½ï¿½Show×´Ì¬
         /// </summary>
         public bool IsShow 
         {
@@ -77,7 +76,7 @@ namespace ASUI
                     m_styleState = this.GameObject.GetComponent<ASUIStyleState>();
                     if (m_styleState == null)
                     {
-                        Debug.Log($"{this.GameObject?.name}Ã»ÓÐASUIStyleState×é¼þ");
+                        Debug.Log($"{this.GameObject?.name}Ã»ï¿½ï¿½ASUIStyleStateï¿½ï¿½ï¿½");
                         return null;
                     }
                 }
@@ -117,7 +116,7 @@ namespace ASUI
             if (WidgetState == WidgetState.Entering)
             {
                 await Observable.EveryUpdate()
-                    .FirstAsync(_ => WidgetState != WidgetState.Entering); // µÈ´ýÖ±µ½ÍË³öEntering×´Ì¬
+                    .FirstAsync(_ => WidgetState != WidgetState.Entering); // ï¿½È´ï¿½Ö±ï¿½ï¿½ï¿½Ë³ï¿½Entering×´Ì¬
             }
         }
         public virtual void OnShow()
@@ -132,7 +131,7 @@ namespace ASUI
             if (WidgetState == WidgetState.Exiting)
             {
                 await Observable.EveryUpdate()
-                    .FirstAsync(_ => WidgetState != WidgetState.Exiting); // µÈ´ýÖ±µ½ÍË³öExiting×´Ì¬
+                    .FirstAsync(_ => WidgetState != WidgetState.Exiting); // ï¿½È´ï¿½Ö±ï¿½ï¿½ï¿½Ë³ï¿½Exiting×´Ì¬
             }
             this.GameObject.SetActive(false);
         }

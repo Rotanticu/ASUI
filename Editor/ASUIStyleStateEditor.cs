@@ -13,7 +13,7 @@ namespace ASUI
     [CustomEditor(typeof(ASUIStyleState))]
     public class ASUIStyleStateEditor : Editor
     {
-        //����ѡ����Щ���
+        //优先选中哪些组件
         public static List<Type> PrioritySelectionComponentTypeList = new List<Type>()
         {
             typeof(TextMeshProUGUI),
@@ -23,27 +23,27 @@ namespace ASUI
             typeof(RawImage),
         };
         /// <summary>
-        /// �Ƿ����ֵ�ı�
+        /// 是否组件值改变
         /// </summary>
         private bool isDirty;
         /// <summary>
-        /// ÿһ��ASUIInfo��ǰѡ����������
+        /// 每一个ASUIInfo当前选择的组件类型
         /// </summary>
         private Dictionary<GameObject, Type> selectedComponent = new Dictionary<GameObject, Type>();
         /// <summary>
-        /// ÿ�������Ӧ��ASUIStyle�����ļ����Ƿ�չ��
+        /// 每个组件对应的ASUIStyle伸缩文件夹是否展开
         /// </summary>
         private readonly Dictionary<Component, bool> styleEditorFolderState = new Dictionary<Component, bool>();
         /// <summary>
-        /// Unity����Ͽ��Ը���˳���List
+        /// Unity面板上可以更改顺序的List
         /// </summary>
         private ReorderableList reorderableList;
         /// <summary>
-        /// �༭��Ŀ�����
+        /// 编辑器目标对象
         /// </summary>
         private ASUIStyleState aSUIStyleState;
         /// <summary>
-        /// ���治ͬ״̬���������ʽ���ֵ�
+        /// 保存不同状态各个组件样式的字典
         /// </summary>
         private StringToDictionaryIASUIStyleSerializedDictionary StateStyleDictionary => aSUIStyleState.StateStyleDictionary;
         public void OnEnable()
@@ -63,7 +63,7 @@ namespace ASUI
             DrawStateStyleFolderList();
             DrawSaveAndDeleteStateStyleButton();
             EditorGUILayout.BeginHorizontal();
-            //������޸ģ��ͱ�����
+            //如果有修改，就保存下
             if (isDirty)
             {
                 EditorUtility.SetDirty(serializedObject.targetObject);
@@ -71,7 +71,7 @@ namespace ASUI
             serializedObject.ApplyModifiedProperties();
         }
         /// <summary>
-        /// ����ASUIInfo��ͷ
+        /// 绘制ASUIInfo表头
         /// </summary>
         private void DrawASUIInfoListHead()
         {
@@ -85,17 +85,17 @@ namespace ASUI
         }
 
         /// <summary>
-        /// ����ASUIInfo�б�
+        /// 绘制ASUIInfo列表
         /// </summary>
         private void DrawASUIInfoReorderableList()
         {
             reorderableList.drawHeaderCallback = (Rect rect) =>
             {
-                EditorGUI.LabelField(rect, "��Ҫ����״̬��UI�б�");
+                EditorGUI.LabelField(rect, "需要配置状态的UI列表");
             };
             reorderableList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
-                // ��ȡ��index��element
+                // 获取第index个element
                 SerializedProperty element = reorderableList.serializedProperty.GetArrayElementAtIndex(index);
                 Component oldComponent = element.FindPropertyRelative("Component").objectReferenceValue as Component;
 
@@ -126,25 +126,25 @@ namespace ASUI
             reorderableList.DoLayoutList();
         }
         /// <summary>
-        /// ������ק��ʾ����
+        /// 绘制拖拽提示区域
         /// </summary>
         private void DrawDragArea()
         {
-            //����ק���������ӡ�����ʾ����
+            //“拖拽到这里添加”，提示区域
             GUIStyle helpStyle = new GUIStyle(EditorStyles.helpBox);
             helpStyle.alignment = TextAnchor.MiddleCenter;
             helpStyle.normal.textColor = Color.white;
             helpStyle.fontSize = 18;
             helpStyle.fontStyle = FontStyle.BoldAndItalic;
             helpStyle.border = GUI.skin.window.border;
-            EditorGUILayout.LabelField(GUIContent.none, new GUIContent("�� ק �� �� �� �� ��"), helpStyle, GUILayout.Height(100), GUILayout.ExpandWidth(true));
-            //��ק������ʱ
+            EditorGUILayout.LabelField(GUIContent.none, new GUIContent("拖 拽 到 这 里 添 加"), helpStyle, GUILayout.Height(100), GUILayout.ExpandWidth(true));
+            //拖拽到区域时
             if (Event.current.type == EventType.DragUpdated)
             {
                 DragAndDrop.visualMode = DragAndDropVisualMode.Link;
                 Event.current.Use();
             }
-            //��ק�������ɿ�ʱ�����ֵ���������
+            //拖拽到区域松开时，往字典里新增项
             else if (Event.current.type == EventType.DragPerform)
             {
                 // To consume drag data.
@@ -187,12 +187,12 @@ namespace ASUI
             }
         }
         /// <summary>
-        /// �����л�״̬�������˵��͵�ǰ״̬��
+        /// 绘制切换状态的下拉菜单和当前状态名
         /// </summary>
         private void DrawSwitchStateDropdownButton()
         {
             EditorGUILayout.BeginHorizontal();
-            //ָʾ��ǰ��ʽ״̬
+            //指示当前样式状态
             if (EditorGUILayout.DropdownButton(new GUIContent(aSUIStyleState.State), FocusType.Keyboard))
             {
                 GenericMenu componentMenu = new GenericMenu();
@@ -218,11 +218,11 @@ namespace ASUI
             EditorGUILayout.EndHorizontal();
         }
         /// <summary>
-        /// ���������Ӧ����ʽ�ļ���
+        /// 绘制组件对应的样式文件夹
         /// </summary>
         private void DrawStateStyleFolderList()
         {
-            if (StateStyleDictionary == null || !StateStyleDictionary.ContainsKey(aSUIStyleState.State))
+            if (StateStyleDictionary == null || aSUIStyleState.State == null || !StateStyleDictionary.ContainsKey(aSUIStyleState.State))
                 return;
             var cpmponentStyleDictionary = StateStyleDictionary[aSUIStyleState.State];
             foreach (var keyValuePair in cpmponentStyleDictionary)
@@ -244,20 +244,20 @@ namespace ASUI
             }
         }
         /// <summary>
-        /// ���Ʊ����ɾ����ʽ��ť
+        ///  绘制保存和删除样式按钮
         /// </summary>
         private void DrawSaveAndDeleteStateStyleButton()
         {
-            //���浱ǰ�������ʽ
-            if (GUILayout.Button(new GUIContent("������ʽ")))
+            //保存当前组件的样式
+            if (GUILayout.Button(new GUIContent("保存样式")))
             {
                 if (string.IsNullOrEmpty(aSUIStyleState.State))
                 {
-                    EditorUtility.DisplayDialog("������ʽ", "û��������ʽ,�������󱣴�", "ok");
+                    EditorUtility.DisplayDialog("保存样式", "没有命名样式,请命名后保存", "ok");
                 }
                 else
                 {
-                    if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State) || EditorUtility.DisplayDialog("������ʽ", $"��ʽ {aSUIStyleState.State} �Ѵ��ڣ�ȷ��������ʽ��", "ȷ��", "ȡ��"))
+                    if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State) || EditorUtility.DisplayDialog("保存样式", $"样式 {aSUIStyleState.State} 已存在，确定覆盖样式吗？", "确定", "取消"))
                     {
                         if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State))
                             StateStyleDictionary.Add(aSUIStyleState.State, new ComponentToIASUIStyleSerializedDictionary());
@@ -281,9 +281,9 @@ namespace ASUI
                     }
                 }
             }
-            if (GUILayout.Button(new GUIContent("ɾ����ʽ")))
+            if (GUILayout.Button(new GUIContent("删除样式")))
             {
-                bool result = EditorUtility.DisplayDialog("ɾ����ʽ", $"ȷ��Ҫɾ����ʽ {aSUIStyleState.State} ��", "ȷ��", "ȡ��");
+                bool result = EditorUtility.DisplayDialog("删除样式", $"确定要删除样式 {aSUIStyleState.State} 吗？", "确定", "取消");
                 if (result)
                 {
                     if (StateStyleDictionary != null && StateStyleDictionary.ContainsKey(aSUIStyleState.State))
