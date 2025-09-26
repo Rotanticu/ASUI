@@ -202,12 +202,10 @@ namespace ASUI.Test
             
             for (int i = 0; i < iterations; i++)
             {
-                float4 newVel = default;
                 float4 currentVal = (float4)currentValue;
                 float4 currentVel = (float4)currentVelocity;
                 float4 targetVal = (float4)targetValue;
                 float4 targetVel = (float4)targetVelocity;
-                float4 result = default;
                 SpringUtility.SpringElastic(deltaTime, ref currentVal, ref currentVel, targetVal, targetVel, dampingRatio, stiffness);
                 currentValue = new Vector4(currentValue.x + 0.0001f, currentValue.y + 0.0001f, currentValue.z + 0.0001f, currentValue.w + 0.0001f);
             }

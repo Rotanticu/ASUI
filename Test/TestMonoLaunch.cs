@@ -34,7 +34,7 @@ public class TestMonoLaunch : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        var motion = LitMotion.LMotion.Spring.Create(DamperSlider.normalizedValue, ControllerSlider.normalizedValue, 1, LitMotion.SpringOptions.Underdamped).WithLoops(-1).Bind(x => DamperSlider.normalizedValue = x);
+        var motion = LitMotion.LMotion.Spring.Create(DamperSlider.normalizedValue, ControllerSlider.normalizedValue, LitMotion.SpringOptions.Underdamped).WithLoops(-1).Bind(x => DamperSlider.normalizedValue = x);
         ControllerSlider.onValueChanged.AddListener(x => motion.SetEndValue<float, LitMotion.SpringOptions>(x));
     }
     
@@ -53,8 +53,7 @@ public class TestMonoLaunch : MonoBehaviour
                 followMotion = LitMotion.LMotion.Spring.Create(
                     (Vector2)followTarget.position,  // 起始位置
                     mouseScreenPos,                  // 目标位置（鼠标位置）
-                    1.0f,                           // 持续时间
-                    LitMotion.SpringOptions.Underdamped  // 使用欠阻尼，有弹性效果
+                    LitMotion.SpringOptions.Underdamped                           // 使用欠阻尼，有弹性效果
                 ).WithLoops(-1)
                 .Bind(pos => followTarget.position = pos);
             }
