@@ -207,7 +207,7 @@ namespace ASUI
                         foreach (var kvp in StateStyleDictionary[aSUIStyleState.State])
                         {
                             kvp.Value.ApplyStyle(kvp.Key);
-                        }
+                        } 
                         EditorUtility.SetDirty(serializedObject.targetObject);
                         serializedObject.ApplyModifiedProperties();
                 });
@@ -239,7 +239,7 @@ namespace ASUI
                     () =>
                     {
                         EditorGUILayout.Space();
-                        aSUIStyle.DrawInEditorFoldout();
+                        aSUIStyle.DrawInEditorFoldout(component);
                     });
             }
         }
@@ -266,7 +266,13 @@ namespace ASUI
                             if (ASUIInfo.Component == null)
                                 continue;
                             var type = ASUIInfo.Component.GetType();
-                            var styleType = Type.GetType($"ASUI.{type.Name}Style");
+                            Type styleType = null;
+                            var asuiAssembly = System.Reflection.Assembly.Load("ASUI");
+                            if (asuiAssembly != null)
+                            {
+                                var styleTypeName = $"ASUI.{type.Name}Style";
+                                styleType = asuiAssembly.GetType(styleTypeName);
+                            }
                             if (styleType == null)
                                 continue;
                             var styleTypeAttribute = styleType.GetCustomAttribute<ASUIStyleAttribute>();

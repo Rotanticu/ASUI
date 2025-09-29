@@ -8,6 +8,8 @@ using UnityEngine.UI;
 using TMPro;
 using System.Threading.Tasks;
 using LitMotion.Extensions;
+using UnityEngine.InputSystem;
+
 
 public class TestMonoLaunch : MonoBehaviour
 {
@@ -27,7 +29,7 @@ public class TestMonoLaunch : MonoBehaviour
     public Slider DamperVelocitySlider;
 
     public RectTransform followTarget;
-    
+
     // Spring动画变量
     private MotionHandle followMotion;
 
@@ -37,16 +39,16 @@ public class TestMonoLaunch : MonoBehaviour
         var motion = LitMotion.LMotion.Spring.Create(DamperSlider.normalizedValue, ControllerSlider.normalizedValue, LitMotion.SpringOptions.Underdamped).WithLoops(-1).Bind(x => DamperSlider.normalizedValue = x);
         ControllerSlider.onValueChanged.AddListener(x => motion.SetEndValue<float, LitMotion.SpringOptions>(x));
     }
-    
+
     // Update is called once per frame
     void Update()
     {
         // 检测鼠标右键按下
-        if (Input.GetMouseButton(1)) // 右键按下
+        if (Mouse.current.rightButton.isPressed) // 右键按下
         {
             // 获取鼠标在屏幕上的位置
-            Vector2 mouseScreenPos = Input.mousePosition;
-            
+            Vector2 mouseScreenPos = Mouse.current.position.ReadValue();
+
             if (followMotion == MotionHandle.None)
             {
                 // 创建2D Spring动画，让followTarget跟随鼠标位置
@@ -78,7 +80,7 @@ public class TestMonoLaunch : MonoBehaviour
     public async Task Hide() { await mainWindow.Hide(); }
     public async Task Destroy() { await mainWindow.Destroy(false); }
 
-    public static bool Approximately(float a, float b,float precision)
+    public static bool Approximately(float a, float b, float precision)
     {
         return MathF.Abs(b - a) < MathF.Max(1E-06f * MathF.Max(MathF.Abs(a), MathF.Abs(b)), precision);
     }

@@ -26,10 +26,29 @@ namespace ASUI
         }
 
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout()
+        public void DrawInEditorFoldout(Component component = null)
         {
-            text = EditorGUILayout.TextField("Text", text, GUILayout.ExpandWidth(true));
-            color = EditorGUILayout.ColorField("Color", color);
+            var newText = EditorGUILayout.TextField("Text", text, GUILayout.ExpandWidth(true));
+            if (newText != text)
+            {
+                text = newText;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
+            
+            var newColor = EditorGUILayout.ColorField("Color", color);
+            if (newColor != color)
+            {
+                color = newColor;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
         }
 #endif
     }

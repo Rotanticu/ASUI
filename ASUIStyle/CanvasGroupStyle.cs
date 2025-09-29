@@ -22,9 +22,19 @@ namespace ASUI
             alpha = canvasGroup.alpha;
         }
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout()
+        public void DrawInEditorFoldout(Component component = null)
         {
-            alpha = EditorGUILayout.FloatField("Alpha", alpha);
+            var newAlpha = EditorGUILayout.FloatField("Alpha", alpha);
+            if (newAlpha != alpha)
+            {
+                alpha = newAlpha;
+                // 实时应用到UI组件
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
         }
 #endif
     }

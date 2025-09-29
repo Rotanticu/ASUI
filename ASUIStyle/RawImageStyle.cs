@@ -31,13 +31,42 @@ namespace ASUI
         }
 
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout()
+        public void DrawInEditorFoldout(Component component = null)
         {
-            color = EditorGUILayout.ColorField("Color", color);
+            var newColor = EditorGUILayout.ColorField("Color", color);
+            if (newColor != color)
+            {
+                color = newColor;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
+            
             EditorGUILayout.Space();
-            texture = (Texture)EditorGUILayout.ObjectField("Texture", texture, typeof(Texture), true);
+            var newTexture = (Texture)EditorGUILayout.ObjectField("Texture", texture, typeof(Texture), true);
+            if (newTexture != texture)
+            {
+                texture = newTexture;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
+            
             EditorGUILayout.Space();
-            material = (Material)EditorGUILayout.ObjectField("Material", material, typeof(Material), true);
+            var newMaterial = (Material)EditorGUILayout.ObjectField("Material", material, typeof(Material), true);
+            if (newMaterial != material)
+            {
+                material = newMaterial;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
         }
 #endif
     }

@@ -29,13 +29,42 @@ namespace ASUI
             rotation = rectTransform.rotation;
         }
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout()
+        public void DrawInEditorFoldout(Component component = null)
         {
-            position = EditorGUILayout.Vector3Field("Position", position);
+            var newPosition = EditorGUILayout.Vector3Field("Position", position);
+            if (newPosition != position)
+            {
+                position = newPosition;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
+            
             EditorGUILayout.Space();
-            rotation = Quaternion.Euler(EditorGUILayout.Vector3Field("Rotation", rotation.eulerAngles));
+            var newRotation = Quaternion.Euler(EditorGUILayout.Vector3Field("Rotation", rotation.eulerAngles));
+            if (newRotation != rotation)
+            {
+                rotation = newRotation;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
+            
             EditorGUILayout.Space();
-            scale = EditorGUILayout.Vector3Field("Scale", scale);
+            var newScale = EditorGUILayout.Vector3Field("Scale", scale);
+            if (newScale != scale)
+            {
+                scale = newScale;
+                if (component != null)
+                {
+                    ApplyStyle(component);
+                    EditorUtility.SetDirty(component);
+                }
+            }
         }
 #endif
     }

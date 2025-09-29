@@ -10,7 +10,7 @@ namespace ASUI
         public void SaveStyle(Component component);
         public void ApplyStyle(Component component);
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout();
+        public void DrawInEditorFoldout(Component component = null);
 #endif
     }
 }
