@@ -26,18 +26,29 @@ public class TestMonoLaunch : MonoBehaviour
 
     public Slider ControllerSlider;
     public Slider DamperSlider;
-    public Slider DamperVelocitySlider;
+    public Slider DamperStiffnessSlider;
 
     public RectTransform followTarget;
 
+
+    private MotionHandle springMotion;
     // Spring动画变量
     private MotionHandle followMotion;
+    
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        var motion = LitMotion.LMotion.Spring.Create(DamperSlider.normalizedValue, ControllerSlider.normalizedValue, LitMotion.SpringOptions.Underdamped).WithLoops(-1).Bind(x => DamperSlider.normalizedValue = x);
-        ControllerSlider.onValueChanged.AddListener(x => motion.SetEndValue<float, LitMotion.SpringOptions>(x));
+        var springOptions = LitMotion.SpringOptions.Underdamped;
+        springMotion = LitMotion.LMotion.Spring.Create(DamperSlider.normalizedValue, ControllerSlider.normalizedValue, springOptions).WithLoops(-1,LoopType.Incremental).Bind(x => DamperSlider.normalizedValue = x);
+        ControllerSlider.onValueChanged.AddListener(x => springMotion.SetEndValue<float, LitMotion.SpringOptions>(x));
+        DamperStiffnessSlider.onValueChanged.AddListener(x => springMotion.GetOptions<float, LitMotion.SpringOptions>().DampingRatio = x);
+        
+        // 设置状态切换按钮事件
+        if (SwitchStateButton != null)
+        {
+            SwitchStateButton.onClick.AddListener(SwitchToNextState);
+        }
     }
 
     // Update is called once per frame
@@ -56,7 +67,7 @@ public class TestMonoLaunch : MonoBehaviour
                     (Vector2)followTarget.position,  // 起始位置
                     mouseScreenPos,                  // 目标位置（鼠标位置）
                     LitMotion.SpringOptions.Underdamped                           // 使用欠阻尼，有弹性效果
-                ).WithLoops(-1)
+                ).WithLoops(-1,LitMotion.LoopType.Incremental)
                 .Bind(pos => followTarget.position = pos);
             }
             else
@@ -79,6 +90,14 @@ public class TestMonoLaunch : MonoBehaviour
     public async Task Show() { await mainWindow.Show(); }
     public async Task Hide() { await mainWindow.Hide(); }
     public async Task Destroy() { await mainWindow.Destroy(false); }
+
+    /// <summary>
+    /// 切换到下一个状态
+    /// </summary>
+    public void SwitchToNextState()
+    {
+        
+    }
 
     public static bool Approximately(float a, float b, float precision)
     {
