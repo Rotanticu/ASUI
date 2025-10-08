@@ -9,7 +9,7 @@ using R3.Triggers;
 using LitMotion;
 using LitMotion.Extensions;
 
-public class UIMainMenuWindow : ASUIWindowBase
+public class UIMainMenuWindow : WidgetsBase
 {
     public UIMainTitle mainTitle;
     public override void OnInit()
@@ -67,32 +67,5 @@ public class UIMainMenuWindow : ASUIWindowBase
 
 
     }
-    public override void PlayShowAnimation()
-    {
-    }
-    public override void ShowAnimationCompleted()
-    {
-        base.ShowAnimationCompleted();
-    }
-    public override void OnHide()
-    {
-    }
-    public override void PlayHideAnimation()
-    {
-    }
-    public override void HideAnimationCompleted()
-    {
-        base.HideAnimationCompleted();
-    }
-    public void Update()
-    {
-    }
-    public override void OnDestroy()
-    {
-        //this.Button.onClick.RemoveListener(this.RefreshTime);
-    }
-    public override void ApplyStyle()
-    {
-
-    }
+    public override bool IsVisible { get => this.GameObject.activeInHierarchy; }
 }

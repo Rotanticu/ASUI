@@ -7,11 +7,11 @@ using LitMotion;
 namespace ASUI
 {
     [Serializable]
-    public class TestMainWindow : ASUIWindowBase
+    public class TestMainWindow : WidgetsBase
     {
         public CanvasGroup canvasGroup;
         public TextMeshProUGUI HeadText;
-        
+
         public float t;
         public Button Button { get; private set; }
         private bool m_IsUpdateFade = false;
@@ -35,7 +35,7 @@ namespace ASUI
         }
         private float fadeDuration = 2f;
         private MotionHandle showMotion;
-        public override void PlayShowAnimation()
+        public void PlayShowAnimation()
         {
             m_IsUpdateFade = true;
             float currentAlpha = this.canvasGroup.alpha;
@@ -51,9 +51,8 @@ namespace ASUI
                 //hideMotion.Complete();
             }
         }
-        public override void ShowAnimationCompleted()
+        public void ShowAnimationCompleted()
         {
-            base.ShowAnimationCompleted();
             m_IsUpdateFade = false;
         }
         public override void OnHide()
@@ -61,7 +60,7 @@ namespace ASUI
             Debug.Log("Hide");
         }
         private MotionHandle hideMotion;
-        public override void PlayHideAnimation()
+        public void PlayHideAnimation()
         {
             m_IsUpdateFade = true;
             float currentAlpha = this.canvasGroup.alpha;
@@ -77,9 +76,8 @@ namespace ASUI
                 //hideMotion.Complete();
             }
         }
-        public override void HideAnimationCompleted()
+        public void HideAnimationCompleted()
         {
-            base.HideAnimationCompleted();
             m_IsUpdateFade = false;
         }
         public void Update()
@@ -119,6 +117,8 @@ namespace ASUI
         {
 
         }
+        public override bool IsVisible { get => this.canvasGroup.alpha > 0; }
+
     }
 }
 

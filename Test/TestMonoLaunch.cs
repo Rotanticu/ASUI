@@ -96,7 +96,7 @@ public class TestMonoLaunch : MonoBehaviour
     /// </summary>
     public void SwitchToNextState()
     {
-        
+        //mainWindow.StyleState.SwitchToState("Default");
     }
 
     public static bool Approximately(float a, float b, float precision)
