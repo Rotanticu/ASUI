@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Threading.Tasks;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -13,12 +14,13 @@ namespace ASUI
         public Sprite sprite;
         public Material material;
 
-        public readonly void ApplyStyle(Component component)
+        public readonly async Task ApplyStyle(Component component)
         {
             Image image = component as Image;
             image.color = color;
             image.sprite = sprite;
             image.material = material;
+            await Task.CompletedTask;
         }
         public void SaveStyle(Component component)
         {
@@ -37,7 +39,7 @@ namespace ASUI
                 color = newColor;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }
@@ -49,7 +51,7 @@ namespace ASUI
                 sprite = newSprite;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }
@@ -61,7 +63,7 @@ namespace ASUI
                 material = newMaterial;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }

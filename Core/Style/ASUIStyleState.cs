@@ -9,7 +9,7 @@ using UnityEngine.Rendering;
 
 namespace ASUI
 {
-    //Hack: Unity ²»ÐòÁÐ»¯·ºÐÍÀàÐÍ£¬ÕâÃ´Ð´²ÅÄÜÔÚ²»Ê¹ÓÃOdinµÄÇé¿öÏÂÈÃUnityÐòÁÐ»¯×Öµä
+    //Hack: Unity ï¿½ï¿½ï¿½ï¿½ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½Ã´Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ú²ï¿½Ê¹ï¿½ï¿½Odinï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Unityï¿½ï¿½ï¿½Ð»ï¿½ï¿½Öµï¿½
     //https://odininspector.com/tutorials/serialize-anything/serializing-dictionaries#odin-serializer
     [Serializable]
     public class ComponentToIASUIStyleSerializedDictionary : UnitySerializedDictionary<Component, IASUIStyle> { }
@@ -19,16 +19,24 @@ namespace ASUI
     public class ASUIStyleState : MonoBehaviour
     {
         [SerializeField]
-        private string m_state;
+        private string _prevState;
+        public string PrevState
+        {
+            get => _prevState;
+            set => _prevState = value;
+        }
+
+        [SerializeField]
+        private string _state;
         public string State
         {
             get
             {
-                return m_state;
+                return _state;
             }
             set
             {
-                m_state = value;
+                _state = value;
             }
 
         }
@@ -54,9 +62,18 @@ namespace ASUI
             return findResult;
         }
 
-        public void AddComponentWithName(string UIName,Component component)
+        public void AddComponentWithName(string UIName, Component component)
         {
             this.ASUIInfoList.Add(new ASUIInfo(UIName, component));
+        }
+
+        public ComponentToIASUIStyleSerializedDictionary GetStyle(string state)
+        {
+            if(StateStyleDictionary.ContainsKey(state))
+            {
+                return StateStyleDictionary[state];
+            }
+            return null;
         }
     }
 

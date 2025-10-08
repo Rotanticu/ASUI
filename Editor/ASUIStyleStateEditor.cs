@@ -206,7 +206,7 @@ namespace ASUI
                         aSUIStyleState.State = stateList[index];
                         foreach (var kvp in StateStyleDictionary[aSUIStyleState.State])
                         {
-                            kvp.Value.ApplyStyle(kvp.Key);
+                            _ = kvp.Value.ApplyStyle(kvp.Key);
                         } 
                         EditorUtility.SetDirty(serializedObject.targetObject);
                         serializedObject.ApplyModifiedProperties();

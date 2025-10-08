@@ -12,87 +12,74 @@ namespace ASUI
 {
     public enum WidgetState
     {
+
+        Showing = 1,
+        Showed = 2,
+        Hiding = 3,
+        Hideen = 4,
+
+
         Uninitialized = 0,
-        Entering = 1,
-        Show = 2,
-        Exiting = 3,
-        Hide = 4,
+        Transitioning = 6,
+        Idle = 5,
         Destroyed = 5,
     }
-    public abstract class WidgetsBase : IASUIInit, IASUIShow, IASUIHide, IASUIDestroy
+    public abstract class WidgetsBase
     {
         private WidgetState m_WidgetState = WidgetState.Uninitialized;
-        public WidgetState WidgetState{ get => m_WidgetState; set => m_WidgetState = value;}
+        public WidgetState WidgetState { get => m_WidgetState; set => m_WidgetState = value; }
+
+
+        private string PrevTransitionName;
+        public string TransitionName { get; set; }
         public bool IsInitialized { get => WidgetState != WidgetState.Uninitialized; }
 
-        /// <summary>
-        /// �Ƿ�ɱ��������ʶ��
-        /// ���ڶ�����ԭ�򣬿�����ЩUIԪ��Enteringʱ����Ļ�����͸��״̬����Ҫһ��ʱ��ſɼ�
-        /// ����Ƿ�ɼ���Ҫ�ھ�����������жϲ�ʵ��
-        /// </summary>
-        public abstract bool IsVisible { get; }
+        [SerializeField]
+        private ASUIUnityEvent _initEvent;
+        public ASUIUnityEvent InitEvent { get => _initEvent; set => _initEvent = value; }
+        [SerializeField]
+        private ASUIUnityEvent _destroyEvent;
+        public ASUIUnityEvent DestroyEvent { get => _destroyEvent; set => _destroyEvent = value; }
 
-        /// <summary>
-        /// �Ƿ����
-        /// ֻҪ����Hide״̬�������,����Entering��Show״̬
-        /// </summary>
-        public bool IsShow 
+        [SerializeField]
+        private ASUITransUnityEvent _startTransitionEvent;
+        public ASUITransUnityEvent StartTransitionEvent { get => _startTransitionEvent; set => _startTransitionEvent = value; }
+        [SerializeField]
+        private ASUITransUnityEvent _endTransitionEvent;
+        public ASUITransUnityEvent EndTransitionEvent { get => _endTransitionEvent; set => _endTransitionEvent = value; }
+
+        private GameObject _gameObject;
+        public GameObject GameObject { get => _gameObject; private set => _gameObject = value; }
+        public Transform Transform { get => _gameObject.transform; }
+
+        private ASUIStyleState _styleState;
+        public ASUIStyleState StyleState
         {
-            get =>
-                (WidgetState == WidgetState.Entering ||
-                WidgetState == WidgetState.Show) &&
-                this.GameObject.activeInHierarchy;
-        }
-
-        [SerializeField]
-        private ASUIUnityEvent m_InitEvent;
-        public ASUIUnityEvent InitEvent { get => m_InitEvent; set => m_InitEvent = value; }
-        [SerializeField]
-        private ASUIUnityEvent m_ShowEvent;
-        public ASUIUnityEvent ShowEvent { get => m_ShowEvent; set => m_ShowEvent = value; }
-        [SerializeField]
-        private ASUIUnityEvent m_ShowAnimationCompletedEvent;
-        public ASUIUnityEvent ShowAnimationCompletedEvent { get => m_ShowAnimationCompletedEvent; set => m_ShowAnimationCompletedEvent = value; }
-        [SerializeField]
-        private ASUIUnityEvent m_HideEvent;
-        public ASUIUnityEvent HideEvent { get => m_HideEvent; set => m_HideEvent = value; }
-        [SerializeField]
-        private ASUIUnityEvent m_HideAnimationCompletedEvent;
-        public ASUIUnityEvent HideAnimationCompletedEvent { get => m_HideAnimationCompletedEvent; set => m_HideAnimationCompletedEvent = value; }
-        [SerializeField]
-        private ASUIUnityEvent m_DestroyEvent;
-        public ASUIUnityEvent DestroyEvent { get => m_DestroyEvent; set => m_DestroyEvent = value; }
-
-        private GameObject m_GameObject;
-        public GameObject GameObject { get => m_GameObject; private set => m_GameObject = value;}
-        public Transform Transform { get => m_GameObject.transform; }
-
-        private ASUIStyleState m_styleState;
-        public ASUIStyleState StyleState { 
             get
             {
-                if(m_styleState == null)
+                if (_styleState == null)
                 {
-                    m_styleState = this.GameObject.GetComponent<ASUIStyleState>();
-                    if (m_styleState == null)
+                    _styleState = this.GameObject.GetComponent<ASUIStyleState>();
+                    if (_styleState == null)
                     {
-                        Debug.Log($"{this.GameObject?.name}û��ASUIStyleState���");
+                        Debug.Log($"{this.GameObject?.name}没有ASUIStyleState组件");
                         return null;
                     }
                 }
-                return m_styleState;
-            } 
-            set => m_styleState = value; }
+                return _styleState;
+            }
+            set => _styleState = value;
+        }
 
-        private List<WidgetsBase> m_children;
-        public List<WidgetsBase> Children { get => m_children; set => m_children = value; }
+        private List<WidgetsBase> _children;
+        public List<WidgetsBase> Children { get => _children; set => _children = value; }
 
         public virtual void Init(GameObject gameObject)
         {
-            this.m_GameObject = gameObject;
-            this.m_styleState = this.Transform.GetComponent<ASUIStyleState>();
+            this._gameObject = gameObject;
+            this._styleState = this.Transform.GetComponent<ASUIStyleState>();
             this.InstantiateUnityEvent();
-            this.WidgetState = WidgetState.Hide;
+            this.WidgetState = WidgetState.Idle;
             this.OnInit();
         }
         private void InstantiateUnityEvent()
@@ -100,100 +87,84 @@ namespace ASUI
             if (this.IsInitialized)
                 return;
             this.InitEvent ??= new ASUIUnityEvent();
-            this.ShowEvent ??= new ASUIUnityEvent();
-            this.ShowAnimationCompletedEvent ??= new ASUIUnityEvent();
-            this.HideEvent ??= new ASUIUnityEvent();
-            this.HideAnimationCompletedEvent ??= new ASUIUnityEvent();
+            this.StartTransitionEvent ??= new ASUITransUnityEvent();
+            this.EndTransitionEvent ??= new ASUITransUnityEvent();
             this.DestroyEvent ??= new ASUIUnityEvent();
         }
-        public abstract void OnInit();
-
-        public virtual async Task Show()
-        {
-            this.GameObject.SetActive(true);
-            this.OnShow();
-            this.ShowEvent?.Invoke();
-            if (WidgetState == WidgetState.Entering)
-            {
-                await Observable.EveryUpdate()
-                    .FirstAsync(_ => WidgetState != WidgetState.Entering); // �ȴ�ֱ���˳�Entering״̬
-            }
-        }
-        public virtual void OnShow()
+        public virtual void OnInit()
         {
 
         }
 
-        public virtual async Task Hide()
+        public virtual async Task Transition(string transitionName)
         {
-            this.OnHide();
-            this.HideEvent?.Invoke();
-            if (WidgetState == WidgetState.Exiting)
-            {
-                await Observable.EveryUpdate()
-                    .FirstAsync(_ => WidgetState != WidgetState.Exiting); // �ȴ�ֱ���˳�Exiting״̬
-            }
-            this.GameObject.SetActive(false);
-        }
-        public virtual void OnHide()
-        {
-
+            if (!this.IsInitialized)
+                return;
+            if (this.TransitionName == transitionName)
+                return;
+            if (this.StyleState)
+                this.PrevTransitionName = this.TransitionName;
+            this.TransitionName = transitionName;
+            this.WidgetState = WidgetState.Transitioning;
+            this.StartTransitionEvent?.Invoke(transitionName);
+            this.OnStartTransition(transitionName);
+            await Task.WhenAll(this.Children.Select(child => child.Transition(transitionName))
+            .Append(ApplyStyle(this.PrevTransitionName == transitionName)));
+            this.WidgetState = WidgetState.Idle;
+            this.OnEndTransition(transitionName);
+            this.EndTransitionEvent?.Invoke(transitionName);
         }
         public virtual async Task Destroy(bool immediately)
-        {
-            if (this.WidgetState == WidgetState.Uninitialized ||
-                this.WidgetState == WidgetState.Hide ||
-                immediately)
-            {
-                this.DestroyImmediately();
-            }
-            else
-            {
-                await this.Hide();
-                this.DestroyImmediately();
-            }
-        }
-
-        public virtual void DestroyImmediately()
         {
             this.WidgetState = WidgetState.Destroyed;
             this.DestroyEvent?.Invoke();
             this.RemoveAllListeners();
-            if(this.Children != null)
-            {
-                foreach (var widget in this.Children)
-                {
-                    widget.DestroyImmediately();
-                }
-            }
-            this.Children = null;
+            if (!immediately)
+                await Task.WhenAll(this.Children.Select(child => child.Transition("Hide")).Append(this.Transition("Hide")));
+            await Task.WhenAll(this.Children.Select(child => child.Destroy(immediately)).ToArray());
             GameObject.Destroy(this.GameObject);
+        }
+
+        public virtual void OnStartTransition(string transitionName)
+        {
+            
+        }
+
+        public virtual void OnEndTransition(string transitionName)
+        {
+            
         }
 
         private void RemoveAllListeners()
         {
             this.InitEvent?.RemoveAllListeners();
-            this.ShowEvent?.RemoveAllListeners();
-            this.ShowAnimationCompletedEvent?.RemoveAllListeners();
-            this.HideEvent?.RemoveAllListeners();
-            this.HideAnimationCompletedEvent?.RemoveAllListeners();
+            this.StartTransitionEvent?.RemoveAllListeners();
+            this.EndTransitionEvent?.RemoveAllListeners();
             this.DestroyEvent?.RemoveAllListeners();
             this.InitEvent = null;
-            this.ShowEvent = null;
-            this.ShowAnimationCompletedEvent = null;
-            this.HideEvent = null;
-            this.HideAnimationCompletedEvent = null;
+            this.StartTransitionEvent = null;
+            this.EndTransitionEvent = null;
             this.DestroyEvent = null;
         }
 
         public virtual void OnDestroy()
         {
-
+            
         }
 
-        public virtual void ApplyStyle()
+        public async virtual Task ApplyStyle(bool isReverse)
         {
-
+            var style = this.StyleState.GetStyle(this.TransitionName);
+            if(style != null)
+            {
+                Task[] tasks = new Task[style.Count];
+                for (int i = 0; i < style.Count; i++)
+                {
+                    var kvp = style.ElementAt(i);
+                    tasks[i] = Task.Run(() => kvp.Value.ApplyStyle(kvp.Key));
+                }
+                await Task.WhenAll(tasks);
+            }
         }
 
         public T CreateWidget<T>(GameObject gameObject) where T : WidgetsBase, new()
@@ -217,64 +188,12 @@ namespace ASUI
 
     }
     [Serializable]
+    public class ASUITransUnityEvent : UnityEvent<string>
+    {
+    }
+    
+    [Serializable]
     public class ASUIUnityEvent : UnityEvent
     {
-    }
-    public interface IASUIInit
-    {
-        public void Init(GameObject gameObject);
-        public void OnInit();
-        public ASUIUnityEvent InitEvent { get; set; }
-    }
-
-    public interface IASUIShow
-    {
-        public Task Show();
-        public void OnShow();
-        public ASUIUnityEvent ShowEvent { get; set; }
-    }
-
-    public interface IASUIHide
-    {
-        public Task Hide();
-        public void OnHide();
-        public ASUIUnityEvent HideEvent { get; set; }
-    }
-
-    public interface IASUIDestroy
-    {
-        public Task Destroy(bool immediately);
-        public void OnDestroy();
-        public ASUIUnityEvent DestroyEvent { get; set; }
-    }
-
-    public interface IASUIInteraction
-    {
-        public bool IsInteraction { get; set; }
-    }
-    public interface IASUIStateSwitch
-    {
-        public ASUIStyleState StyleState { get; set; }
-
-        public string CurrentState { get; set; }
-
-        public async void SwitchToState(string stateName)
-        {
-            var isExistState = StyleState.StateStyleDictionary.TryGetValue(stateName, out ComponentToIASUIStyleSerializedDictionary styleDic);
-            if (!isExistState)
-                return;
-            var timer = Observable.Timer(TimeSpan.Zero, TimeSpan.FromSeconds(1), UnityTimeProvider.Update).Take(styleDic.Count);
-            IEnumerator enumerator = styleDic.GetEnumerator();
-            timer.Subscribe((_) =>
-            {
-                if (enumerator.MoveNext())
-                {
-                    var kvp = (KeyValuePair<Component, IASUIStyle>)enumerator.Current;
-                    kvp.Value.ApplyStyle(kvp.Key);
-                }
-            }
-            );
-            await timer.LastAsync();
-        }
     }
 }

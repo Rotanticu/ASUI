@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Threading.Tasks;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14,12 +15,13 @@ namespace ASUI
         public Vector3 scale;
         public Quaternion rotation;
 
-        public readonly void ApplyStyle(Component component)
+        public readonly async Task ApplyStyle(Component component)
         {
             RectTransform rectTransform = component as RectTransform;
             rectTransform.position = position;
             rectTransform.localScale = scale;
             rectTransform.rotation = rotation;
+            await Task.CompletedTask;
         }
         public void SaveStyle(Component component)
         {
@@ -37,7 +39,7 @@ namespace ASUI
                 position = newPosition;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }
@@ -49,7 +51,7 @@ namespace ASUI
                 rotation = newRotation;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }
@@ -61,7 +63,7 @@ namespace ASUI
                 scale = newScale;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }

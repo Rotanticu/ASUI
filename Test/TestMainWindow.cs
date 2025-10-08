@@ -11,10 +11,8 @@ namespace ASUI
     {
         public CanvasGroup canvasGroup;
         public TextMeshProUGUI HeadText;
-
-        public float t;
+        
         public Button Button { get; private set; }
-        private bool m_IsUpdateFade = false;
         [ContextMenu("OnInit")]
         public override void OnInit()
         {
@@ -29,96 +27,31 @@ namespace ASUI
         {
             this.HeadText.text = $"���ڵ�ʱ����{DateTime.Now.ToString("HH:mm:ss")}";
         }
-        public override void OnShow()
+
+        public override void OnStartTransition(string transitionName)
+        {
+            base.OnStartTransition(transitionName);
+            if(transitionName == "Show")
+            {
+                this.OnShow();
+            }
+            if(transitionName == "Hide")
+            {
+                this.OnHide();
+            }
+        }
+        public void OnShow()
         {
             this.HeadText.text = $"���ڵ�ʱ����{DateTime.Now.ToString("HH:mm:ss")}";
         }
-        private float fadeDuration = 2f;
-        private MotionHandle showMotion;
-        public void PlayShowAnimation()
-        {
-            m_IsUpdateFade = true;
-            float currentAlpha = this.canvasGroup.alpha;
-            float duration = (1.0f - currentAlpha) * fadeDuration;
-            if (showMotion.IsActive())
-            {
-                showMotion.Cancel();
-                //hideMotion.Complete();
-            }
-            if (hideMotion.IsActive())
-            {
-                hideMotion.Cancel();
-                //hideMotion.Complete();
-            }
-        }
-        public void ShowAnimationCompleted()
-        {
-            m_IsUpdateFade = false;
-        }
-        public override void OnHide()
+        public void OnHide()
         {
             Debug.Log("Hide");
-        }
-        private MotionHandle hideMotion;
-        public void PlayHideAnimation()
-        {
-            m_IsUpdateFade = true;
-            float currentAlpha = this.canvasGroup.alpha;
-            float duration = (currentAlpha) * fadeDuration;
-            if (showMotion.IsActive())
-            {
-                showMotion.Cancel();
-                //hideMotion.Complete();
-            }
-            if (hideMotion.IsActive())
-            {
-                hideMotion.Cancel();
-                //hideMotion.Complete();
-            }
-        }
-        public void HideAnimationCompleted()
-        {
-            m_IsUpdateFade = false;
-        }
-        public void Update()
-        {
-            if (!m_IsUpdateFade)
-            {
-                return;
-            }
-            if (this.WidgetState == WidgetState.Entering)
-            {
-                if (this.canvasGroup.alpha < 1)
-                {
-                    this.canvasGroup.alpha += 0.01f;
-                }
-                else
-                {
-                    this.ShowAnimationCompleted();
-                }
-            }
-            if (this.WidgetState == WidgetState.Exiting)
-            {
-                if (this.canvasGroup.alpha > 0)
-                {
-                    this.canvasGroup.alpha -= 0.01f;
-                }
-                else
-                {
-                    this.HideAnimationCompleted();
-                }
-            }
         }
         public override void OnDestroy()
         {
             this.Button.onClick.RemoveListener(this.RefreshTime);
         }
-        public override void ApplyStyle()
-        {
-
-        }
-        public override bool IsVisible { get => this.canvasGroup.alpha > 0; }
-
     }
 }
 

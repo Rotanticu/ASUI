@@ -87,10 +87,6 @@ public class TestMonoLaunch : MonoBehaviour
         };
     }
 
-    public async Task Show() { await mainWindow.Show(); }
-    public async Task Hide() { await mainWindow.Hide(); }
-    public async Task Destroy() { await mainWindow.Destroy(false); }
-
     /// <summary>
     /// 切换到下一个状态
     /// </summary>

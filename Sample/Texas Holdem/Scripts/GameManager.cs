@@ -11,7 +11,7 @@ public class GameManager : MonoBehaviour
         GameObject mainMenuWindow = GameObject.Find("MainMenuWindow");
         UIMainMenuWindow uIMainMenuWindow = new UIMainMenuWindow();
         uIMainMenuWindow.Init(mainMenuWindow);
-        Observable.FromAsync(async ct => await uIMainMenuWindow.Show())
+        Observable.FromAsync(async ct => await uIMainMenuWindow.Transition("Show"))
             .Subscribe(result => Debug.Log(result));
     }
 

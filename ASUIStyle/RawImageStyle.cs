@@ -2,6 +2,7 @@ using System.Security.Policy;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Threading.Tasks;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -15,12 +16,13 @@ namespace ASUI
         public Texture texture;
         public Material material;
 
-        public readonly void ApplyStyle(Component component)
+        public readonly async Task ApplyStyle(Component component)
         {
             RawImage rawImage = component as RawImage;
             rawImage.color = color;
             rawImage.texture = texture;
             rawImage.material = material;
+            await Task.CompletedTask;
         }
         public void SaveStyle(Component component)
         {
@@ -39,7 +41,7 @@ namespace ASUI
                 color = newColor;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }
@@ -51,7 +53,7 @@ namespace ASUI
                 texture = newTexture;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }
@@ -63,7 +65,7 @@ namespace ASUI
                 material = newMaterial;
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }

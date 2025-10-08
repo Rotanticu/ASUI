@@ -17,10 +17,19 @@ public class UIMainMenuWindow : WidgetsBase
         mainTitle = new UIMainTitle();
         mainTitle.Init(this.StyleState.GetComponentByUIName<RectTransform>("tex_title").gameObject);
     }
-    public override void OnShow()
+    public override void OnStartTransition(string transitionName)
+    {
+        base.OnStartTransition(transitionName);
+        if(transitionName == "Show")
+        {
+            this.OnShow();
+        }
+    }
+    public void OnShow()
     {
         //mainTitle.TexTitle.AnimateColorTo(Color.red, 1f);
-        LMotion.Create(0f,1f,3f).ToObservable().Subscribe(x=>{
+        LMotion.Create(0f, 1f, 3f).ToObservable().Subscribe(x =>
+        {
             Debug.Log(x);
         });
         // 使用DOTween实现动画
@@ -67,5 +76,4 @@ public class UIMainMenuWindow : WidgetsBase
 
 
     }
-    public override bool IsVisible { get => this.GameObject.activeInHierarchy; }
 }

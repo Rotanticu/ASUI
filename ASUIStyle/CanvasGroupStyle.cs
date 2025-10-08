@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Threading.Tasks;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -11,10 +12,11 @@ namespace ASUI
     {
         public float alpha;
 
-        public readonly void ApplyStyle(Component component)
+        public readonly async Task ApplyStyle(Component component)
         {
             CanvasGroup canvasGroup = component as CanvasGroup;
             canvasGroup.alpha = alpha;
+            await Task.CompletedTask;
         }
         public void SaveStyle(Component component)
         {
@@ -31,7 +33,7 @@ namespace ASUI
                 // 实时应用到UI组件
                 if (component != null)
                 {
-                    ApplyStyle(component);
+                    _ = ApplyStyle(component);
                     EditorUtility.SetDirty(component);
                 }
             }
