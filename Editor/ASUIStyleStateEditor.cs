@@ -43,12 +43,15 @@ namespace ASUI
         /// </summary>
         private ASUIStyleState aSUIStyleState;
         /// <summary>
-        /// 保存不同状态各个组件样式的字典
+        /// 获取当前状态的样式数据
         /// </summary>
-        private StringToDictionaryIASUIStyleSerializedDictionary StateStyleDictionary => aSUIStyleState.StateStyleDictionary;
+        private ASUIStyleStateData GetCurrentStateData()
+        {
+            return aSUIStyleState.GetStyleState(aSUIStyleState.CurrentState);
+        }
         public void OnEnable()
         {
-            SerializedProperty componentList = serializedObject.FindProperty("ASUIInfoList");
+            SerializedProperty componentList = serializedObject.FindProperty("componentInfos");
             reorderableList = new ReorderableList(serializedObject, componentList, true, true, true, true);
             aSUIStyleState = (serializedObject.targetObject as ASUIStyleState);
         }
@@ -97,11 +100,22 @@ namespace ASUI
             {
                 // 获取第index个element
                 SerializedProperty element = reorderableList.serializedProperty.GetArrayElementAtIndex(index);
-                Component oldComponent = element.FindPropertyRelative("Component").objectReferenceValue as Component;
+                if (element == null) return;
+                
+                SerializedProperty componentProperty = element.FindPropertyRelative("component");
+                Component oldComponent = componentProperty?.objectReferenceValue as Component;
 
                 EditorGUILayout.BeginHorizontal();
-                EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width / 3, rect.height), element.FindPropertyRelative("UIName"), GUIContent.none);
-                bool folder = EditorGUI.DropdownButton(new Rect(rect.x * 2 + rect.width / 3, rect.y, rect.width / 3, rect.height), new GUIContent(oldComponent == null ? "" : oldComponent.GetType().Name), FocusType.Keyboard, EditorStyles.popup);
+                
+                // 计算每个字段的宽度，留出间隔
+                float spacing = 10f;
+                float fieldWidth = (rect.width - spacing * 2) / 3f;
+                
+                SerializedProperty nameProperty = element.FindPropertyRelative("componentName");
+                if (nameProperty != null)
+                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, fieldWidth, rect.height), nameProperty, GUIContent.none);
+                    
+                bool folder = EditorGUI.DropdownButton(new Rect(rect.x + fieldWidth + spacing, rect.y + 2, fieldWidth, rect.height), new GUIContent(oldComponent == null ? "" : oldComponent.GetType().Name), FocusType.Keyboard, EditorStyles.popup);
                 if (folder && oldComponent != null)
                 {
                     GenericMenu componentMenu = new GenericMenu();
@@ -112,15 +126,17 @@ namespace ASUI
                         componentMenu.AddItem(new GUIContent(components[i].GetType().Name), selectedComponent.ContainsKey(menuComponent.gameObject) && selectedComponent[menuComponent.gameObject] == menuComponent.GetType(), () =>
                         {
                             selectedComponent.Set(menuComponent.gameObject, menuComponent.GetType());
-                            ASUIInfo aSUIInfo = aSUIStyleState.ASUIInfoList[index];
-                            aSUIInfo.Component = menuComponent;
-                            aSUIStyleState.ASUIInfoList[index] = aSUIInfo;
+                            var componentInfo = aSUIStyleState.ComponentInfos[index];
+                            componentInfo.component = menuComponent;
+                            componentInfo.componentTypeName = menuComponent.GetType().FullName;
+                            aSUIStyleState.ComponentInfos[index] = componentInfo;
                             EditorUtility.SetDirty(serializedObject.targetObject);
                         });
                     }
                     componentMenu.ShowAsContext();
                 }
-                EditorGUI.PropertyField(new Rect(rect.x * 3 + rect.width / 3 * 2, rect.y, rect.width / 3, rect.height), element.FindPropertyRelative("Component"), GUIContent.none);
+                if (componentProperty != null)
+                    EditorGUI.PropertyField(new Rect(rect.x + (fieldWidth + spacing) * 2, rect.y, fieldWidth, rect.height), componentProperty, GUIContent.none);
                 EditorGUILayout.EndHorizontal();
             };
             reorderableList.DoLayoutList();
@@ -161,7 +177,7 @@ namespace ASUI
                         if (dragObject != null && rectTransform != null)
                         {
                             string name = dragObject.name;
-                            while (aSUIStyleState.ASUIInfoList.Where((ASUIInfo) => ASUIInfo.UIName == name).Count() > 0)
+                            while (aSUIStyleState.ComponentInfos.Where(info => info.componentName == name).Count() > 0)
                             {
                                 string[] nameSplit = name.Split('_');
                                 if (nameSplit.Length > 1)
@@ -174,13 +190,13 @@ namespace ASUI
                             {
                                 if (dragObject.GetComponent(componentType) != null)
                                 {
-                                    aSUIStyleState.ASUIInfoList.Add(new ASUIInfo() { UIName = name, Component = dragObject.GetComponent(componentType) });
+                                    aSUIStyleState.AddComponentWithName(name, dragObject.GetComponent(componentType));
                                     isExistSuitableComponent = true;
                                     break;
                                 }
                             }
                             if (!isExistSuitableComponent)
-                                aSUIStyleState.ASUIInfoList.Add(new ASUIInfo() { UIName = name, Component = dragObject.GetComponent<RectTransform>() });
+                                aSUIStyleState.AddComponentWithName(name, dragObject.GetComponent<RectTransform>());
                         }
                     }
                 }
@@ -193,28 +209,28 @@ namespace ASUI
         {
             EditorGUILayout.BeginHorizontal();
             //指示当前样式状态
-            if (EditorGUILayout.DropdownButton(new GUIContent(aSUIStyleState.State), FocusType.Keyboard))
+            if (EditorGUILayout.DropdownButton(new GUIContent(aSUIStyleState.CurrentState), FocusType.Keyboard))
             {
                 GenericMenu componentMenu = new GenericMenu();
-                var stateList = StateStyleDictionary.Keys.ToList();
+                var stateList = aSUIStyleState.StyleStates.Select(s => s.stateName).ToList();
                 for (int i = 0; i < stateList.Count; i++)
                 {
                     int index = i;
-                    var x = stateList[index];
-                    componentMenu.AddItem(new GUIContent(stateList[index]), aSUIStyleState.State == stateList[index], () =>
+                    var stateName = stateList[index];
+                    componentMenu.AddItem(new GUIContent(stateName), aSUIStyleState.CurrentState == stateName, () =>
                     {
-                        aSUIStyleState.State = stateList[index];
-                        foreach (var kvp in StateStyleDictionary[aSUIStyleState.State])
-                        {
-                            _ = kvp.Value.ApplyStyle(kvp.Key);
-                        } 
+                        _ = aSUIStyleState.ApplyState(stateName);
                         EditorUtility.SetDirty(serializedObject.targetObject);
                         serializedObject.ApplyModifiedProperties();
-                });
+                    });
                 }
                 componentMenu.ShowAsContext();
             }
-            aSUIStyleState.State = EditorGUILayout.TextField(aSUIStyleState.State);
+            string newState = EditorGUILayout.TextField(aSUIStyleState.CurrentState);
+            if (newState != aSUIStyleState.CurrentState)
+            {
+                _ = aSUIStyleState.ApplyState(newState);
+            }
             EditorGUILayout.EndHorizontal();
         }
         /// <summary>
@@ -222,13 +238,15 @@ namespace ASUI
         /// </summary>
         private void DrawStateStyleFolderList()
         {
-            if (StateStyleDictionary == null || aSUIStyleState.State == null || !StateStyleDictionary.ContainsKey(aSUIStyleState.State))
+            var currentStateData = GetCurrentStateData();
+            if (currentStateData == null)
                 return;
-            var cpmponentStyleDictionary = StateStyleDictionary[aSUIStyleState.State];
-            foreach (var keyValuePair in cpmponentStyleDictionary)
+                
+            foreach (var componentStyle in currentStateData.componentStyles)
             {
-                Component component = keyValuePair.Key;
-                IASUIStyle aSUIStyle = keyValuePair.Value;
+                Component component = aSUIStyleState.GetComponentByUIName<Component>(componentStyle.componentName);
+                if (component == null || componentStyle.style == null)
+                    continue;
 
                 if (!styleEditorFolderState.ContainsKey(component))
                     styleEditorFolderState.Add(component, false);
@@ -239,7 +257,7 @@ namespace ASUI
                     () =>
                     {
                         EditorGUILayout.Space();
-                        aSUIStyle.DrawInEditorFoldout(component);
+                        componentStyle.style.DrawInEditorFoldout(component);
                     });
             }
         }
@@ -251,54 +269,67 @@ namespace ASUI
             //保存当前组件的样式
             if (GUILayout.Button(new GUIContent("保存样式")))
             {
-                if (string.IsNullOrEmpty(aSUIStyleState.State))
+                if (string.IsNullOrEmpty(aSUIStyleState.CurrentState))
                 {
                     EditorUtility.DisplayDialog("保存样式", "没有命名样式,请命名后保存", "ok");
                 }
                 else
                 {
-                    if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State) || EditorUtility.DisplayDialog("保存样式", $"样式 {aSUIStyleState.State} 已存在，确定覆盖样式吗？", "确定", "取消"))
+                    var existingState = aSUIStyleState.GetStyleState(aSUIStyleState.CurrentState);
+                    if (existingState != null && !EditorUtility.DisplayDialog("保存样式", $"样式 {aSUIStyleState.CurrentState} 已存在，确定覆盖样式吗？", "确定", "取消"))
                     {
-                        if (!StateStyleDictionary.ContainsKey(aSUIStyleState.State))
-                            StateStyleDictionary.Add(aSUIStyleState.State, new ComponentToIASUIStyleSerializedDictionary());
-                        foreach (var ASUIInfo in aSUIStyleState.ASUIInfoList)
-                        {
-                            if (ASUIInfo.Component == null)
-                                continue;
-                            var type = ASUIInfo.Component.GetType();
-                            Type styleType = null;
-                            var asuiAssembly = System.Reflection.Assembly.Load("ASUI");
-                            if (asuiAssembly != null)
-                            {
-                                var styleTypeName = $"ASUI.{type.Name}Style";
-                                styleType = asuiAssembly.GetType(styleTypeName);
-                            }
-                            if (styleType == null)
-                                continue;
-                            var styleTypeAttribute = styleType.GetCustomAttribute<ASUIStyleAttribute>();
-                            if (styleTypeAttribute != null && styleTypeAttribute.ComponentType == type)
-                            {
-                                var asuiStyle = Activator.CreateInstance(styleType) as IASUIStyle;
-                                asuiStyle.SaveStyle(ASUIInfo.Component);
-                                StateStyleDictionary[aSUIStyleState.State].Set(ASUIInfo.Component, asuiStyle);
-                            }
-                        }
-                        isDirty = true;
+                        return;
                     }
+                    
+                    var componentStyles = new List<ASUIComponentStyleData>();
+                    foreach (var componentInfo in aSUIStyleState.ComponentInfos)
+                    {
+                        if (componentInfo.component == null)
+                            continue;
+                            
+                        var type = componentInfo.component.GetType();
+                        Type styleType = null;
+                        var asuiAssembly = System.Reflection.Assembly.Load("ASUI");
+                        if (asuiAssembly != null)
+                        {
+                            var styleTypeName = $"ASUI.{type.Name}Style";
+                            styleType = asuiAssembly.GetType(styleTypeName);
+                        }
+                        if (styleType == null)
+                            continue;
+                            
+                        var styleTypeAttribute = styleType.GetCustomAttribute<ASUIStyleAttribute>();
+                        if (styleTypeAttribute != null && styleTypeAttribute.ComponentType == type)
+                        {
+                            var asuiStyle = Activator.CreateInstance(styleType) as IASUIStyle;
+                            asuiStyle.SaveStyle(componentInfo.component);
+                            
+                            componentStyles.Add(new ASUIComponentStyleData
+                            {
+                                componentName = componentInfo.componentName,
+                                componentTypeName = componentInfo.componentTypeName,
+                                style = asuiStyle
+                            });
+                        }
+                    }
+                    
+                    aSUIStyleState.AddOrUpdateState(aSUIStyleState.CurrentState, componentStyles);
+                    isDirty = true;
                 }
             }
             if (GUILayout.Button(new GUIContent("删除样式")))
             {
-                bool result = EditorUtility.DisplayDialog("删除样式", $"确定要删除样式 {aSUIStyleState.State} 吗？", "确定", "取消");
+                bool result = EditorUtility.DisplayDialog("删除样式", $"确定要删除样式 {aSUIStyleState.CurrentState} 吗？", "确定", "取消");
                 if (result)
                 {
-                    if (StateStyleDictionary != null && StateStyleDictionary.ContainsKey(aSUIStyleState.State))
+                    var stateToRemove = aSUIStyleState.StyleStates.FirstOrDefault(s => s.stateName == aSUIStyleState.CurrentState);
+                    if (stateToRemove != null)
                     {
-                        StateStyleDictionary.Remove(aSUIStyleState.State);
-                        if (StateStyleDictionary.Count > 0)
-                            aSUIStyleState.State = StateStyleDictionary.FirstOrDefault().Key;
+                        aSUIStyleState.StyleStates.Remove(stateToRemove);
+                        if (aSUIStyleState.StyleStates.Count > 0)
+                            _ = aSUIStyleState.ApplyState(aSUIStyleState.StyleStates.First().stateName);
                         else
-                            aSUIStyleState.State = "normal";
+                            _ = aSUIStyleState.ApplyState("normal");
                     }
                     isDirty = true;
                 }

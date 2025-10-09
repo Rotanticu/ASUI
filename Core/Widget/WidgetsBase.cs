@@ -154,17 +154,7 @@ namespace ASUI
 
         public async virtual Task ApplyStyle(bool isReverse)
         {
-            var style = this.StyleState.GetStyle(this.TransitionName);
-            if(style != null)
-            {
-                Task[] tasks = new Task[style.Count];
-                for (int i = 0; i < style.Count; i++)
-                {
-                    var kvp = style.ElementAt(i);
-                    tasks[i] = Task.Run(() => kvp.Value.ApplyStyle(kvp.Key));
-                }
-                await Task.WhenAll(tasks);
-            }
+            await this.StyleState.ApplyState(this.TransitionName);
         }
 
         public T CreateWidget<T>(GameObject gameObject) where T : WidgetsBase, new()
