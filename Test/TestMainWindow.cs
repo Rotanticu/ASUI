@@ -7,12 +7,13 @@ using LitMotion;
 namespace ASUI
 {
     [Serializable]
-    public class TestMainWindow : WidgetsBase
+    public class TestMainWindow : ShowHideWidget
     {
         public CanvasGroup canvasGroup;
         public TextMeshProUGUI HeadText;
         
         public Button Button { get; private set; }
+        
         [ContextMenu("OnInit")]
         public override void OnInit()
         {
@@ -25,33 +26,22 @@ namespace ASUI
 
         public void RefreshTime()
         {
-            this.HeadText.text = $"���ڵ�ʱ����{DateTime.Now.ToString("HH:mm:ss")}";
+            this.HeadText.text = $"当前的时间是{DateTime.Now.ToString("HH:mm:ss")}";
         }
 
-        public override void OnStartTransition(string transitionName)
+        protected override void OnShow()
         {
-            base.OnStartTransition(transitionName);
-            if(transitionName == "Show")
-            {
-                this.OnShow();
-            }
-            if(transitionName == "Hide")
-            {
-                this.OnHide();
-            }
+            this.HeadText.text = $"当前的时间是{DateTime.Now.ToString("HH:mm:ss")}";
         }
-        public void OnShow()
-        {
-            this.HeadText.text = $"���ڵ�ʱ����{DateTime.Now.ToString("HH:mm:ss")}";
-        }
-        public void OnHide()
+        
+        protected override void OnHide()
         {
             Debug.Log("Hide");
         }
+        
         public override void OnDestroy()
         {
             this.Button.onClick.RemoveListener(this.RefreshTime);
         }
     }
 }
-
