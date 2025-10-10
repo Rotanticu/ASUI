@@ -172,7 +172,7 @@ namespace ASUI
     {
         [SerializeField] public string componentName;
         [SerializeField] public string componentTypeName; // 存储类型名称字符串
-        [SerializeField] public IASUIStyle style; // 直接存储样式对象
+        [SerializeReference] public IASUIStyle style; // 使用 SerializeReference 支持接口序列化
     }
     
     #endregion

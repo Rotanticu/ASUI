@@ -9,6 +9,7 @@ using UnityEditor;
 
 namespace ASUI
 {
+    [System.Serializable]
     [ASUIStyle(typeof(RawImage))]
     public struct RawImageStyle : IASUIStyle
     {

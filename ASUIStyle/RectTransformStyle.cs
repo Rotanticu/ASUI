@@ -8,6 +8,7 @@ using UnityEditor;
 
 namespace ASUI
 {
+    [System.Serializable]
     [ASUIStyle(typeof(RectTransform))]
     public struct RectTransformStyle : IASUIStyle
     {

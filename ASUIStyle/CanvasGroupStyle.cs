@@ -7,6 +7,7 @@ using UnityEditor;
 #endif
 namespace ASUI
 {
+    [System.Serializable]
     [ASUIStyle(typeof(CanvasGroup))]
     public struct CanvasGroupStyle : IASUIStyle
     {

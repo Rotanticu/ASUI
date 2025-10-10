@@ -7,6 +7,7 @@ using UnityEditor;
 
 namespace ASUI
 {
+    [System.Serializable]
     [ASUIStyle(typeof(TextMeshProUGUI))]
     public struct TextMeshProUGUIStyle : IASUIStyle
     {

@@ -7,6 +7,7 @@ using UnityEditor;
 
 namespace ASUI
 {
+    [System.Serializable]
     [ASUIStyle(typeof(Image))]
     public struct ImageStyle : IASUIStyle
     {
