@@ -65,6 +65,7 @@ namespace ASUI
             DrawSwitchStateDropdownButton();
             DrawStateStyleFolderList();
             DrawSaveAndDeleteStateStyleButton();
+            DrawAnimToButton();
             EditorGUILayout.BeginHorizontal();
             //如果有修改，就保存下
             if (isDirty)
@@ -336,7 +337,108 @@ namespace ASUI
             }
             EditorGUILayout.EndHorizontal();
         }
+
+        /// <summary>
+        /// 绘制AnimTo按钮
+        /// </summary>
+        private void DrawAnimToButton()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("动画配置", EditorStyles.boldLabel);
+            
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("AnimTo", GUILayout.Width(80)))
+            {
+                ShowAnimToMenu();
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        /// <summary>
+        /// 显示AnimTo菜单
+        /// </summary>
+        private void ShowAnimToMenu()
+        {
+            var stateList = aSUIStyleState.StyleStates.Select(s => s.stateName).ToList();
+            var otherStates = stateList.Where(s => s != aSUIStyleState.CurrentState).ToList();
+            
+            if (otherStates.Count == 0)
+            {
+                EditorUtility.DisplayDialog("AnimTo", "没有其他状态可以创建动画", "确定");
+                return;
+            }
+            
+            GenericMenu menu = new GenericMenu();
+            foreach (var targetState in otherStates)
+            {
+                menu.AddItem(new GUIContent(targetState), false, () => CreateAnimationToState(targetState));
+            }
+            menu.ShowAsContext();
+        }
+
+        /// <summary>
+        /// 创建到指定状态的动画
+        /// </summary>
+        private void CreateAnimationToState(string targetState)
+        {
+            var fromState = aSUIStyleState.CurrentState;
+            var toState = targetState;
+            
+            // 获取当前状态和目标状态的样式数据
+            var fromStateData = aSUIStyleState.GetStateData(fromState);
+            var toStateData = aSUIStyleState.GetStateData(toState);
+            
+            if (fromStateData == null || toStateData == null)
+            {
+                EditorUtility.DisplayDialog("创建动画", "无法获取状态数据", "确定");
+                return;
+            }
+            
+            // 创建LitMotionAnimation组件
+            var animationName = $"{fromState}To{toState}";
+            var litMotionAnimation = aSUIStyleState.gameObject.AddComponent<LitMotion.Animation.LitMotionAnimation>();
+            litMotionAnimation.name = animationName;
+            
+            // 初始化components数组
+            ASUIStyleState.InitializeComponentsArray(litMotionAnimation);
+            
+            // 根据组件值是否相等决定是否添加动画组件
+            SetAnimationValues(litMotionAnimation, fromState, toState);
+            
+            EditorUtility.DisplayDialog("创建动画", $"已创建动画: {animationName}", "确定");
+            isDirty = true;
+        }
+        
+
+        /// <summary>
+        /// 设置动画的起始值和结束值
+        /// </summary>
+        private void SetAnimationValues(LitMotion.Animation.LitMotionAnimation animation, string fromState, string toState)
+        {
+            var fromStateData = aSUIStyleState.GetStateData(fromState);
+            var toStateData = aSUIStyleState.GetStateData(toState);
+            
+            if (fromStateData == null || toStateData == null) return;
+            
+            // 遍历所有组件，检查是否需要添加动画
+            foreach (var componentInfo in aSUIStyleState.ComponentInfos)
+            {
+                if (componentInfo.component == null) continue;
+                
+                var fromStyle = fromStateData.FirstOrDefault(s => s.componentName == componentInfo.componentName);
+                var toStyle = toStateData.FirstOrDefault(s => s.componentName == componentInfo.componentName);
+                
+                if (fromStyle?.style != null && toStyle?.style != null)
+                {
+                    // 使用起始样式的AddAnimationComponents方法，传入目标样式
+                    fromStyle.style.AddAnimationComponents(animation, componentInfo.component, toStyle.style);
+                }
+            }
+        }
+
     }
 }
+
+
 
 

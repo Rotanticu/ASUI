@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
+using LitMotion.Animation;
 
 namespace ASUI
 {
@@ -22,6 +23,15 @@ namespace ASUI
         {
             await Task.CompletedTask;
         }
+        
+        /// <summary>
+        /// 为LitMotionAnimation添加动画组件
+        /// 在实现类中根据具体的属性差异来决定添加哪些动画组件
+        /// </summary>
+        /// <param name="animation">目标LitMotionAnimation</param>
+        /// <param name="component">目标组件</param>
+        /// <param name="toStyle">目标样式</param>
+        public void AddAnimationComponents(LitMotionAnimation animation, Component component, IASUIStyle toStyle);
         
 #if UNITY_EDITOR
         /// <summary>

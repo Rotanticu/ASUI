@@ -4,6 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using UnityEngine.UI;
+using LitMotion.Animation;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace ASUI
 {
@@ -16,32 +20,32 @@ namespace ASUI
         [Header("状态管理")]
         [SerializeField] private string currentState;
         [SerializeField] private string previousState;
-        
+
         [Header("组件引用")]
         [SerializeField] private List<ASUIComponentInfo> componentInfos = new List<ASUIComponentInfo>();
-        
+
         [Header("样式状态")]
         [SerializeField] private List<ASUIStyleStateData> styleStates = new List<ASUIStyleStateData>();
-        
+
         // 编辑器访问属性
         public List<ASUIComponentInfo> ComponentInfos => componentInfos;
         public List<ASUIStyleStateData> StyleStates => styleStates;
-        
+
         #region 状态管理
-        
+
         public string CurrentState => currentState;
         public string PreviousState => previousState;
-        
+
         private void SetCurrentState(string stateName)
         {
             previousState = currentState;
             currentState = stateName;
         }
-        
+
         #endregion
-        
+
         #region 组件引用管理
-        
+
         public T GetComponentByUIName<T>(string uiName) where T : Component
         {
             // 查列表
@@ -52,7 +56,7 @@ namespace ASUI
             }
             return null;
         }
-        
+
         public void AddComponentWithName(string uiName, Component component)
         {
             var existing = componentInfos.FirstOrDefault(c => c.componentName == uiName);
@@ -71,11 +75,11 @@ namespace ASUI
                 });
             }
         }
-        
+
         #endregion
-        
+
         #region 状态数据管理
-        
+
         public void AddOrUpdateState(string stateName, List<ASUIComponentStyleData> componentStyles)
         {
             var existingState = styleStates.FirstOrDefault(s => s.stateName == stateName);
@@ -92,26 +96,26 @@ namespace ASUI
                 });
             }
         }
-        
+
         public List<ASUIComponentStyleData> GetStateData(string stateName)
         {
             var state = styleStates.FirstOrDefault(s => s.stateName == stateName);
             return state?.componentStyles;
         }
-        
+
         public ASUIStyleStateData GetStyleState(string stateName)
         {
             return styleStates.FirstOrDefault(s => s.stateName == stateName);
         }
-        
+
         #endregion
-        
+
         #region 状态切换和应用
-        
+
         public async Task ApplyState(string stateName)
         {
             if (currentState == stateName) return;
-            
+
             var stateData = GetStateData(stateName);
             if (stateData == null)
             {
@@ -120,7 +124,7 @@ namespace ASUI
             }
 
             SetCurrentState(stateName);
-            
+
             // 应用样式到所有组件
             var tasks = new List<Task>();
             foreach (var componentStyle in stateData)
@@ -131,10 +135,10 @@ namespace ASUI
                     tasks.Add(ApplyComponentStyle(component, componentStyle));
                 }
             }
-            
+
             await Task.WhenAll(tasks);
         }
-        
+
         private async Task ApplyComponentStyle(Component component, ASUIComponentStyleData styleData)
         {
             if (styleData.style != null)
@@ -146,34 +150,75 @@ namespace ASUI
                 Debug.LogWarning($"Style data for component '{component.name}' is null.");
             }
         }
-        
+
         #endregion
+
+        #region LitMotionAnimation辅助方法
+
+        /// <summary>
+        /// 初始化LitMotionAnimation的components数组
+        /// </summary>
+        public static void InitializeComponentsArray(LitMotionAnimation animation)
+        {
+            // 通过反射获取components字段并初始化为空数组
+            var componentsField = typeof(LitMotionAnimation).GetField("components", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (componentsField != null)
+            {
+                componentsField.SetValue(animation, new LitMotionAnimationComponent[0]);
+            }
+        }
+
+        /// <summary>
+        /// 向LitMotionAnimation添加动画组件
+        /// </summary>
+        public static void AddComponentToAnimation(LitMotionAnimation animation, LitMotionAnimationComponent component)
+        {
+            // 通过反射获取components数组并添加新组件
+            var componentsField = typeof(LitMotionAnimation).GetField("components", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (componentsField != null)
+            {
+                var components = componentsField.GetValue(animation) as LitMotionAnimationComponent[];
+
+                // 扩展现有数组
+                var newComponents = new LitMotionAnimationComponent[components.Length + 1];
+                components.CopyTo(newComponents, 0);
+                newComponents[components.Length] = component;
+
+                // 设置回animation对象
+                componentsField.SetValue(animation, newComponents);
+
+                // 标记对象为脏，确保序列化系统保存更改
+#if UNITY_EDITOR
+                EditorUtility.SetDirty(animation);
+#endif
+            }
+        }
     }
-    
-    #region 数据结构定义
-    
-    [System.Serializable]
-    public class ASUIComponentInfo
-    {
-        [SerializeField] public string componentName;
-        [SerializeField] public Component component;
-        [SerializeField] public string componentTypeName; // 存储类型名称字符串
-    }
-    
-    [System.Serializable]
-    public class ASUIStyleStateData
-    {
-        [SerializeField] public string stateName;
-        [SerializeField] public List<ASUIComponentStyleData> componentStyles = new List<ASUIComponentStyleData>();
-    }
-    
-    [System.Serializable]
-    public class ASUIComponentStyleData
-    {
-        [SerializeField] public string componentName;
-        [SerializeField] public string componentTypeName; // 存储类型名称字符串
-        [SerializeReference] public IASUIStyle style; // 使用 SerializeReference 支持接口序列化
-    }
-    
     #endregion
+
+    #region 数据结构定义
+
+[System.Serializable]
+public class ASUIComponentInfo
+{
+    [SerializeField] public string componentName;
+    [SerializeField] public Component component;
+    [SerializeField] public string componentTypeName; // 存储类型名称字符串
+}
+
+[System.Serializable]
+public class ASUIStyleStateData
+{
+    [SerializeField] public string stateName;
+    [SerializeField] public List<ASUIComponentStyleData> componentStyles = new List<ASUIComponentStyleData>();
+}
+
+[System.Serializable]
+public class ASUIComponentStyleData
+{
+    [SerializeField] public string componentName;
+    [SerializeField] public string componentTypeName; // 存储类型名称字符串
+    [SerializeReference] public IASUIStyle style; // 使用 SerializeReference 支持接口序列化
+}
+#endregion
 }
