@@ -14,31 +14,6 @@ namespace ASUI
         where TAdapter : unmanaged, IMotionAdapter<TValue, TOptions>
     {
 
-        public async Task Trans(List<ASUIComponentStyleData> styleDatas,ASUIStyleState aSUIStyleState, string setting)
-        {
-            if (styleDatas == null)
-            {
-                Debug.LogError("styleDatas is null");
-                return;
-            }
-            if (styleDatas.Count != styleDatas.Count)
-            {
-                Debug.LogError("styleDatas count not match");
-                return;
-            }
-            for (int i = 0; i < styleDatas.Count; i++)
-            {
-                if (setting.Contains(styleDatas[i].componentName))
-                {
-                    //await styleDatas[i].style.ApplyStyle(aSUIStyleState.GetComponentByUIName<Component>(styleDatas[i].componentName),setting.Contains(styleDatas[i].componentName));
-                }
-                else
-                {
-                    //await styleDatas[i].style.ApplyStyle(aSUIStyleState.GetComponentByUIName<Component>(styleDatas[i].componentName),setting);
-                }
-
-            }
-        }
 //         public LitMotionAdapter(MotionBuilder<TValue, TOptions, TAdapter> motionBuilder)
 //         {
 //             this.MotionBuilder = motionBuilder;
