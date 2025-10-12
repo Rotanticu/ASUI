@@ -12,12 +12,12 @@ namespace ASUI
 {
     [System.Serializable]
     [ASUIStyle(typeof(TextMeshProUGUI))]
-    public struct TextMeshProUGUIStyle : IASUIStyle
+    public class TextMeshProUGUIStyle : IASUIStyle
     {
         public string text;
         public Color color;
 
-        public readonly async Task ApplyStyle(Component component)
+        public async Task ApplyStyle(Component component)
         {
             TextMeshProUGUI textMeshProUGUI = component as TextMeshProUGUI;
             textMeshProUGUI.text = text;
@@ -69,29 +69,40 @@ namespace ASUI
 #endif
 
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout(Component component = null)
+        public UnityEngine.UIElements.VisualElement CreateUIElementsEditor(Component component = null)
         {
-            var newText = EditorGUILayout.TextField("Text", text, GUILayout.ExpandWidth(true));
-            if (newText != text)
+            var container = new UnityEngine.UIElements.VisualElement();
+            container.name = "textmeshpro-style-editor";
+
+            // Text字段
+            var textField = new UnityEngine.UIElements.TextField("Text");
+            textField.value = text;
+            textField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<string>>(evt =>
             {
-                text = newText;
-                if (component != null)
+                text = evt.newValue;
+                if (component is TextMeshProUGUI textMeshPro)
                 {
-                    _ = ApplyStyle(component);
+                    textMeshPro.text = text;
                     EditorUtility.SetDirty(component);
                 }
-            }
-            
-            var newColor = EditorGUILayout.ColorField("Color", color);
-            if (newColor != color)
+            });
+            container.Add(textField);
+
+            // Color字段
+            var colorField = new UnityEditor.UIElements.ColorField("Color");
+            colorField.value = color;
+            colorField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Color>>(evt =>
             {
-                color = newColor;
-                if (component != null)
+                color = evt.newValue;
+                if (component is TextMeshProUGUI textMeshPro)
                 {
-                    _ = ApplyStyle(component);
+                    textMeshPro.color = color;
                     EditorUtility.SetDirty(component);
                 }
-            }
+            });
+            container.Add(colorField);
+
+            return container;
         }
 #endif
     }

@@ -10,13 +10,13 @@ namespace ASUI
 {
     [System.Serializable]
     [ASUIStyle(typeof(Image))]
-    public struct ImageStyle : IASUIStyle
+    public class ImageStyle : IASUIStyle
     {
         public Color color;
         public Sprite sprite;
         public Material material;
 
-        public readonly async Task ApplyStyle(Component component)
+        public async Task ApplyStyle(Component component)
         {
             Image image = component as Image;
             image.color = color;
@@ -70,42 +70,56 @@ namespace ASUI
 #endif
 
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout(Component component = null)
+        public UnityEngine.UIElements.VisualElement CreateUIElementsEditor(Component component = null)
         {
-            var newColor = EditorGUILayout.ColorField("Color", color);
-            if (newColor != color)
+            var container = new UnityEngine.UIElements.VisualElement();
+            container.name = "image-style-editor";
+
+            // Color字段
+            var colorField = new UnityEditor.UIElements.ColorField("Color");
+            colorField.value = color;
+            colorField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Color>>(evt =>
             {
-                color = newColor;
-                if (component != null)
+                color = evt.newValue;
+                if (component is Image image)
                 {
-                    _ = ApplyStyle(component);
+                    image.color = color;
                     EditorUtility.SetDirty(component);
                 }
-            }
-            
-            EditorGUILayout.Space();
-            var newSprite = (Sprite)EditorGUILayout.ObjectField("Sprite", sprite, typeof(Sprite), true);
-            if (newSprite != sprite)
+            });
+            container.Add(colorField);
+
+            // Sprite字段
+            var spriteField = new UnityEditor.UIElements.ObjectField("Sprite");
+            spriteField.objectType = typeof(Sprite);
+            spriteField.value = sprite;
+            spriteField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
-                sprite = newSprite;
-                if (component != null)
+                sprite = evt.newValue as Sprite;
+                if (component is Image image)
                 {
-                    _ = ApplyStyle(component);
+                    image.sprite = sprite;
                     EditorUtility.SetDirty(component);
                 }
-            }
-            
-            EditorGUILayout.Space();
-            var newMaterial = (Material)EditorGUILayout.ObjectField("Material", material, typeof(Material), true);
-            if (newMaterial != material)
+            });
+            container.Add(spriteField);
+
+            // Material字段
+            var materialField = new UnityEditor.UIElements.ObjectField("Material");
+            materialField.objectType = typeof(Material);
+            materialField.value = material;
+            materialField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
-                material = newMaterial;
-                if (component != null)
+                material = evt.newValue as Material;
+                if (component is Image image)
                 {
-                    _ = ApplyStyle(component);
+                    image.material = material;
                     EditorUtility.SetDirty(component);
                 }
-            }
+            });
+            container.Add(materialField);
+
+            return container;
         }
 #endif
     }

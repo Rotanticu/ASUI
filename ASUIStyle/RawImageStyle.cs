@@ -12,13 +12,13 @@ namespace ASUI
 {
     [System.Serializable]
     [ASUIStyle(typeof(RawImage))]
-    public struct RawImageStyle : IASUIStyle
+    public class RawImageStyle : IASUIStyle
     {
         public Color color;
         public Texture texture;
         public Material material;
 
-        public readonly async Task ApplyStyle(Component component)
+        public async Task ApplyStyle(Component component)
         {
             RawImage rawImage = component as RawImage;
             rawImage.color = color;
@@ -71,42 +71,56 @@ namespace ASUI
 #endif
 
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout(Component component = null)
+        public UnityEngine.UIElements.VisualElement CreateUIElementsEditor(Component component = null)
         {
-            var newColor = EditorGUILayout.ColorField("Color", color);
-            if (newColor != color)
+            var container = new UnityEngine.UIElements.VisualElement();
+            container.name = "raw-image-style-editor";
+
+            // Color字段
+            var colorField = new UnityEditor.UIElements.ColorField("Color");
+            colorField.value = color;
+            colorField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Color>>(evt =>
             {
-                color = newColor;
-                if (component != null)
+                color = evt.newValue;
+                if (component is RawImage rawImage)
                 {
-                    _ = ApplyStyle(component);
+                    rawImage.color = color;
                     EditorUtility.SetDirty(component);
                 }
-            }
-            
-            EditorGUILayout.Space();
-            var newTexture = (Texture)EditorGUILayout.ObjectField("Texture", texture, typeof(Texture), true);
-            if (newTexture != texture)
+            });
+            container.Add(colorField);
+
+            // Texture字段
+            var textureField = new UnityEditor.UIElements.ObjectField("Texture");
+            textureField.objectType = typeof(Texture);
+            textureField.value = texture;
+            textureField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
-                texture = newTexture;
-                if (component != null)
+                texture = evt.newValue as Texture;
+                if (component is RawImage rawImage)
                 {
-                    _ = ApplyStyle(component);
+                    rawImage.texture = texture;
                     EditorUtility.SetDirty(component);
                 }
-            }
-            
-            EditorGUILayout.Space();
-            var newMaterial = (Material)EditorGUILayout.ObjectField("Material", material, typeof(Material), true);
-            if (newMaterial != material)
+            });
+            container.Add(textureField);
+
+            // Material字段
+            var materialField = new UnityEditor.UIElements.ObjectField("Material");
+            materialField.objectType = typeof(Material);
+            materialField.value = material;
+            materialField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
-                material = newMaterial;
-                if (component != null)
+                material = evt.newValue as Material;
+                if (component is RawImage rawImage)
                 {
-                    _ = ApplyStyle(component);
+                    rawImage.material = material;
                     EditorUtility.SetDirty(component);
                 }
-            }
+            });
+            container.Add(materialField);
+
+            return container;
         }
 #endif
     }

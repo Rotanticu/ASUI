@@ -3,8 +3,7 @@ using System;
 
 namespace ASUI
 {
-    [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = true)]
-
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
     public class ASUIStyleAttribute : Attribute
     {
         public Type ComponentType { get; }

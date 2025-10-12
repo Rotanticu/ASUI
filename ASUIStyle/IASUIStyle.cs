@@ -35,10 +35,11 @@ namespace ASUI
         
 #if UNITY_EDITOR
         /// <summary>
-        /// 在编辑器中绘制样式配置界面
+        /// 创建UIElements样式的编辑器界面
         /// </summary>
         /// <param name="component">目标组件</param>
-        public void DrawInEditorFoldout(Component component = null);
+        /// <returns>VisualElement编辑器界面</returns>
+        public UnityEngine.UIElements.VisualElement CreateUIElementsEditor(Component component = null);
 #endif
     }
 }

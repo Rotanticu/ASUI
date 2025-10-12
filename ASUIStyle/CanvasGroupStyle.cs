@@ -10,11 +10,11 @@ namespace ASUI
 {
     [System.Serializable]
     [ASUIStyle(typeof(CanvasGroup))]
-    public struct CanvasGroupStyle : IASUIStyle
+    public class CanvasGroupStyle : IASUIStyle
     {
         public float alpha;
 
-        public readonly async Task ApplyStyle(Component component)
+        public async Task ApplyStyle(Component component)
         {
             CanvasGroup canvasGroup = component as CanvasGroup;
             canvasGroup.alpha = alpha;
@@ -60,19 +60,26 @@ namespace ASUI
         
 #endif
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout(Component component = null)
+        public UnityEngine.UIElements.VisualElement CreateUIElementsEditor(Component component = null)
         {
-            var newAlpha = EditorGUILayout.FloatField("Alpha", alpha);
-            if (newAlpha != alpha)
+            var container = new UnityEngine.UIElements.VisualElement();
+            container.name = "canvas-group-style-editor";
+
+            // Alpha字段
+            var alphaField = new UnityEngine.UIElements.FloatField("Alpha");
+            alphaField.value = alpha;
+            alphaField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<float>>(evt =>
             {
-                alpha = newAlpha;
-                // 实时应用到UI组件
-                if (component != null)
+                alpha = evt.newValue;
+                if (component is CanvasGroup canvasGroup)
                 {
-                    _ = ApplyStyle(component);
+                    canvasGroup.alpha = alpha;
                     EditorUtility.SetDirty(component);
                 }
-            }
+            });
+            container.Add(alphaField);
+
+            return container;
         }
 #endif
     }

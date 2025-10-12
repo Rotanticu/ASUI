@@ -10,6 +10,7 @@ using System.Reflection;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
 using Button = UnityEngine.UI.Button;
+using UIElementsButton = UnityEngine.UIElements.Button;
 using Image = UnityEngine.UI.Image;
 
 namespace ASUI
@@ -17,49 +18,30 @@ namespace ASUI
     [CustomEditor(typeof(ASUIStyleState))]
     public class ASUIStyleStateEditor : Editor
     {
-        //优先选中哪些组件
-        public static List<Type> PrioritySelectionComponentTypeList = new List<Type>()
-        {
-            typeof(TextMeshProUGUI),
-            typeof(Button),
-            typeof(Image),
-            typeof(CanvasGroup),
-            typeof(RawImage),
-        };
-        /// <summary>
-        /// 是否组件值改变
-        /// </summary>
-        private bool isDirty;
-        
-        /// <summary>
-        /// 用户输入的状态名（用于保存时使用）
-        /// </summary>
-        private string inputStateName;
-        
         /// <summary>
         /// 当前正在编辑的动画配置名称
         /// </summary>
         private string currentEditingAnimationName;
-        
         /// <summary>
-        /// 主动画组件引用（编辑器专用）
+        /// 主动画编辑器
+        /// </summary>
+        private LitMotion.Animation.Editor.LitMotionAnimationEditor mainAnimationEditor;
+        /// <summary>
+        /// 当前正在播放的主动画
         /// </summary>
         private LitMotion.Animation.LitMotionAnimation mainAnimation;
-        
         /// <summary>
-        /// 主动画组件的编辑器
+        /// 是否已修改
         /// </summary>
-        private Editor mainAnimationEditor;
-        
+        private bool isDirty = false;
         /// <summary>
-        /// 根VisualElement引用，用于重新创建界面
+        /// 输入状态名
+        /// </summary>
+        private string inputStateName;
+        /// <summary>
+        /// 根元素引用，用于重新创建UI
         /// </summary>
         private VisualElement rootElement;
-        
-        /// <summary>
-        /// 每一个ASUIInfo当前选择的组件类型
-        /// </summary>
-        private Dictionary<GameObject, Type> selectedComponent = new Dictionary<GameObject, Type>();
         /// <summary>
         /// 每个组件对应的ASUIStyle伸缩文件夹是否展开
         /// </summary>
@@ -99,14 +81,553 @@ namespace ASUI
         {
             var root = new VisualElement();
             rootElement = root; // 保存引用用于重新创建
-            
-            // 创建动画转换按钮
+
+            isDirty = false;
+            serializedObject.Update();
+
+            // 按照之前的顺序创建UI
+            root.Add(CreateASUIInfoListHead());
+            root.Add(CreateASUIInfoReorderableList());
+            root.Add(CreateDragArea());
+            root.Add(CreateSwitchStateDropdownButton());
+            root.Add(CreateStateStyleFolderList());
+            root.Add(CreateSaveAndDeleteStateStyleButton());
             root.Add(CreateAnimToButton());
-            
-            // 创建主动画编辑器
             root.Add(CreateMainAnimationEditor());
-            
+
+            // 如果有修改，就保存下
+            if (isDirty)
+            {
+                serializedObject.ApplyModifiedProperties();
+                EditorUtility.SetDirty(aSUIStyleState);
+            }
+
             return root;
+        }
+        
+        /// <summary>
+        /// 刷新整个检查器
+        /// </summary>
+        private void RefreshInspector()
+        {
+            if (rootElement != null)
+            {
+                // 清除所有子元素
+                rootElement.Clear();
+                
+                // 重新创建所有UI元素
+                rootElement.Add(CreateASUIInfoListHead());
+                rootElement.Add(CreateASUIInfoReorderableList());
+                rootElement.Add(CreateDragArea());
+                rootElement.Add(CreateSwitchStateDropdownButton());
+                rootElement.Add(CreateStateStyleFolderList());
+                rootElement.Add(CreateSaveAndDeleteStateStyleButton());
+            }
+        }
+        
+        /// <summary>
+        /// 创建ASUIInfo列表表头
+        /// </summary>
+        private VisualElement CreateASUIInfoListHead()
+        {
+            var container = new VisualElement();
+            container.name = "asui-info-list-head";
+            
+            var headerRow = new VisualElement();
+            headerRow.style.flexDirection = FlexDirection.Row;
+            headerRow.style.marginBottom = 5;
+            
+            var nameLabel = new Label("Name");
+            nameLabel.style.flexGrow = 1;
+            nameLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            headerRow.Add(nameLabel);
+            
+            var typeLabel = new Label("Type");
+            typeLabel.style.width = 240;
+            typeLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            headerRow.Add(typeLabel);
+            
+            var componentLabel = new Label("Component");
+            componentLabel.style.width = 240;
+            componentLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            headerRow.Add(componentLabel);
+            
+            container.Add(headerRow);
+            return container;
+        }
+        
+        /// <summary>
+        /// 创建ASUIInfo可重排序列表
+        /// </summary>
+        private VisualElement CreateASUIInfoReorderableList()
+        {
+            var container = new VisualElement();
+            container.name = "asui-info-reorderable-list";
+            
+            // 创建表格
+            var table = new VisualElement();
+            table.name = "component-table";
+            
+            for (int i = 0; i < aSUIStyleState.ComponentInfos.Count; i++)
+            {
+                int index = i; // 捕获索引用于回调
+                var componentInfo = aSUIStyleState.ComponentInfos[index];
+                
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.marginBottom = 5;
+                row.style.paddingLeft = 5;
+                row.style.paddingRight = 5;
+                row.style.paddingTop = 3;
+                row.style.paddingBottom = 3;
+                
+                // 名称输入框
+                var nameField = new TextField();
+                nameField.value = componentInfo.componentName;
+                nameField.style.flexGrow = 1;
+                nameField.style.marginRight = 5;
+                nameField.RegisterValueChangedCallback(evt => {
+                    var info = aSUIStyleState.ComponentInfos[index];
+                    info.componentName = evt.newValue;
+                    aSUIStyleState.ComponentInfos[index] = info;
+                    EditorUtility.SetDirty(aSUIStyleState);
+                });
+                row.Add(nameField);
+                
+                // 类型下拉菜单
+                var typeDropdown = new DropdownField();
+                var availableTypes = new List<string>();
+                if (componentInfo.component != null)
+                {
+                    var components = componentInfo.component.GetComponents<Component>();
+                    foreach (var comp in components)
+                    {
+                        availableTypes.Add(comp.GetType().Name);
+                    }
+                }
+                typeDropdown.choices = availableTypes;
+                typeDropdown.value = componentInfo.componentTypeName;
+                typeDropdown.style.width = 240;
+                typeDropdown.style.marginRight = 5;
+                typeDropdown.RegisterValueChangedCallback(evt => {
+                    var info = aSUIStyleState.ComponentInfos[index];
+                    info.componentTypeName = evt.newValue;
+                    if (componentInfo.component != null)
+                    {
+                        var components = componentInfo.component.GetComponents<Component>();
+                        var selectedComponent = components.FirstOrDefault(c => c.GetType().Name == evt.newValue);
+                        if (selectedComponent != null)
+                        {
+                            info.component = selectedComponent;
+                        }
+                    }
+                    aSUIStyleState.ComponentInfos[index] = info;
+                    EditorUtility.SetDirty(aSUIStyleState);
+                });
+                row.Add(typeDropdown);
+                
+                // 组件ObjectField
+                var componentField = new ObjectField();
+                componentField.objectType = typeof(Component);
+                componentField.value = componentInfo.component;
+                componentField.style.width = 240;
+                componentField.RegisterValueChangedCallback(evt => {
+                    var info = aSUIStyleState.ComponentInfos[index];
+                    info.component = evt.newValue as Component;
+                    if (info.component != null)
+                    {
+                        info.componentTypeName = info.component.GetType().Name;
+                        // 更新类型下拉菜单的选项
+                        var components = info.component.GetComponents<Component>();
+                        var availableTypes = components.Select(c => c.GetType().Name).ToList();
+                        typeDropdown.choices = availableTypes;
+                        typeDropdown.value = info.componentTypeName;
+                    }
+                    aSUIStyleState.ComponentInfos[index] = info;
+                    EditorUtility.SetDirty(aSUIStyleState);
+                });
+                row.Add(componentField);
+                
+                table.Add(row);
+            }
+            
+            container.Add(table);
+            return container;
+        }
+        
+        /// <summary>
+        /// 创建拖拽区域
+        /// </summary>
+        private VisualElement CreateDragArea()
+        {
+            var container = new VisualElement();
+            container.name = "drag-area";
+            
+            var dragArea = new VisualElement();
+            dragArea.style.height = 100;
+            dragArea.style.backgroundColor = new Color(0.5f, 0.5f, 0.5f, 0.3f);
+            dragArea.style.borderLeftWidth = 2;
+            dragArea.style.borderRightWidth = 2;
+            dragArea.style.borderTopWidth = 2;
+            dragArea.style.borderBottomWidth = 2;
+            dragArea.style.borderLeftColor = Color.gray;
+            dragArea.style.borderRightColor = Color.gray;
+            dragArea.style.borderTopColor = Color.gray;
+            dragArea.style.borderBottomColor = Color.gray;
+            dragArea.style.justifyContent = Justify.Center;
+            dragArea.style.alignItems = Align.Center;
+            dragArea.style.marginBottom = 10;
+            
+            var dragLabel = new Label("拖拽到这里添加");
+            dragLabel.style.fontSize = 18;
+            dragLabel.style.unityFontStyleAndWeight = FontStyle.BoldAndItalic;
+            dragLabel.style.color = Color.white;
+            dragArea.Add(dragLabel);
+            
+            // 处理拖拽事件
+            dragArea.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
+            dragArea.RegisterCallback<DragPerformEvent>(OnDragPerform);
+            
+            container.Add(dragArea);
+            return container;
+        }
+        
+        /// <summary>
+        /// 拖拽更新事件
+        /// </summary>
+        private void OnDragUpdated(DragUpdatedEvent evt)
+        {
+            DragAndDrop.visualMode = DragAndDropVisualMode.Link;
+            evt.StopPropagation();
+        }
+        
+        /// <summary>
+        /// 拖拽执行事件
+        /// </summary>
+        private void OnDragPerform(DragPerformEvent evt)
+        {
+            DragAndDrop.AcceptDrag();
+            
+            foreach (var obj in DragAndDrop.objectReferences)
+            {
+                if (obj is GameObject gameObject)
+                {
+                    var rectTransform = gameObject.GetComponent<RectTransform>();
+                    if (rectTransform != null)
+                    {
+                        string name = gameObject.name;
+                        while (aSUIStyleState.ComponentInfos.Any(info => info.componentName == name))
+                        {
+                            string[] nameSplit = name.Split('_');
+                            if (nameSplit.Length > 1)
+                                name = nameSplit[0] + $"_{int.Parse(nameSplit[nameSplit.Length - 1]) + 1}";
+                            else
+                                name += "_1";
+                        }
+                        
+                        // 优先选择特定类型的组件
+                        var priorityTypes = new Type[] { typeof(Image), typeof(TextMeshProUGUI), typeof(RawImage), typeof(CanvasGroup) };
+                        Component selectedComponent = null;
+                        
+                        foreach (var type in priorityTypes)
+                        {
+                            var component = gameObject.GetComponent(type);
+                            if (component != null)
+                            {
+                                selectedComponent = component;
+                                break;
+                            }
+                        }
+                        
+                        if (selectedComponent == null)
+                            selectedComponent = rectTransform;
+                            
+                        aSUIStyleState.AddComponentWithName(name, selectedComponent);
+                    }
+                }
+            }
+            
+            EditorUtility.SetDirty(aSUIStyleState);
+            serializedObject.ApplyModifiedProperties();
+            evt.StopPropagation();
+        }
+        
+        /// <summary>
+        /// 创建切换状态的下拉菜单和当前状态名
+        /// </summary>
+        private VisualElement CreateSwitchStateDropdownButton()
+        {
+            var container = new VisualElement();
+            container.name = "state-switch";
+            
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.marginBottom = 5;
+            
+            // 状态切换下拉菜单
+            var stateDropdown = new DropdownField();
+            var stateList = aSUIStyleState.StyleStates.Select(s => s.stateName).ToList();
+            stateDropdown.choices = stateList;
+            if (stateList.Contains(aSUIStyleState.CurrentState))
+                stateDropdown.value = aSUIStyleState.CurrentState;
+            else if (stateList.Count > 0)
+                stateDropdown.value = stateList[0];
+            
+            stateDropdown.RegisterValueChangedCallback(evt => {
+                if (evt.newValue != aSUIStyleState.CurrentState)
+                {
+                    _ = aSUIStyleState.ApplyState(evt.newValue);
+                    inputStateName = null;
+                    EditorUtility.SetDirty(aSUIStyleState);
+                    
+                    // 重新创建整个编辑器以刷新样式属性
+                    RefreshInspector();
+                }
+            });
+            stateDropdown.style.flexGrow = 1;
+            row.Add(stateDropdown);
+            
+            var space = new VisualElement();
+            space.style.width = 20;
+            row.Add(space);
+
+            // 新状态输入
+            var newStateLabel = new Label("新状态名:");
+            newStateLabel.style.width = 60;
+            row.Add(newStateLabel);
+            
+            var newStateField = new TextField();
+            newStateField.value = inputStateName ?? "";
+            newStateField.RegisterValueChangedCallback(evt => {
+                inputStateName = evt.newValue;
+                isDirty = true;
+            });
+            newStateField.style.flexGrow = 1;
+            row.Add(newStateField);
+            
+            container.Add(row);
+            
+            return container;
+        }
+        
+        /// <summary>
+        /// 创建组件对应的样式文件夹
+        /// </summary>
+        private VisualElement CreateStateStyleFolderList()
+        {
+            var container = new VisualElement();
+            container.name = "state-style-folders";
+            
+            var currentStateData = GetCurrentStateData();
+            if (currentStateData == null)
+            {
+                var noDataLabel = new Label("没有找到当前状态的样式数据");
+                noDataLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+                container.Add(noDataLabel);
+                return container;
+            }
+            
+            // 调试信息：显示当前状态和组件数量
+            var debugLabel = new Label($"当前状态: {aSUIStyleState.CurrentState} (组件数量: {currentStateData.componentStyles.Count})");
+            debugLabel.style.fontSize = 10;
+            debugLabel.style.color = new Color(0.7f, 0.7f, 0.7f, 1f);
+            container.Add(debugLabel);
+            
+            // 添加标题
+            var titleLabel = new Label("样式编辑器");
+            titleLabel.style.fontSize = 14;
+            titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            titleLabel.style.marginBottom = 10;
+            titleLabel.style.unityTextAlign = TextAnchor.MiddleLeft;
+            container.Add(titleLabel);
+            
+            // 创建带边框的容器
+            var borderedContainer = new VisualElement();
+            borderedContainer.name = "style-editor-border";
+            
+            // 根据编辑器主题设置颜色
+            bool isDarkTheme = EditorGUIUtility.isProSkin;
+            Color backgroundColor = isDarkTheme ? new Color(0.2f, 0.2f, 0.2f, 1f) : new Color(0.95f, 0.95f, 0.95f, 1f);
+            Color borderColor = isDarkTheme ? new Color(0.4f, 0.4f, 0.4f, 1f) : new Color(0.7f, 0.7f, 0.7f, 1f);
+            
+            borderedContainer.style.backgroundColor = backgroundColor;
+            borderedContainer.style.borderLeftWidth = 2;
+            borderedContainer.style.borderRightWidth = 2;
+            borderedContainer.style.borderTopWidth = 2;
+            borderedContainer.style.borderBottomWidth = 2;
+            borderedContainer.style.borderLeftColor = borderColor;
+            borderedContainer.style.borderRightColor = borderColor;
+            borderedContainer.style.borderTopColor = borderColor;
+            borderedContainer.style.borderBottomColor = borderColor;
+            borderedContainer.style.borderTopLeftRadius = 5;
+            borderedContainer.style.borderTopRightRadius = 5;
+            borderedContainer.style.borderBottomLeftRadius = 5;
+            borderedContainer.style.borderBottomRightRadius = 5;
+            borderedContainer.style.paddingLeft = 10;
+            borderedContainer.style.paddingRight = 10;
+            borderedContainer.style.paddingTop = 10;
+            borderedContainer.style.paddingBottom = 10;
+            borderedContainer.style.marginBottom = 10;
+                
+            foreach (var componentStyle in currentStateData.componentStyles)
+            {
+                Component component = aSUIStyleState.GetComponentByUIName<Component>(componentStyle.componentName);
+                if (component == null || componentStyle.style == null)
+                    continue;
+
+                if (!styleEditorFolderState.ContainsKey(component))
+                    styleEditorFolderState.Add(component, false);
+
+                var foldout = new Foldout();
+                foldout.text = component.name;
+                foldout.value = styleEditorFolderState.ContainsKey(component) ? styleEditorFolderState[component] : false;
+                foldout.RegisterValueChangedCallback(evt => {
+                    styleEditorFolderState[component] = evt.newValue;
+                });
+                
+                // 为每个foldout添加美观的样式
+                Color foldoutBackgroundColor = isDarkTheme ? new Color(0.3f, 0.3f, 0.3f, 0.8f) : new Color(1f, 1f, 1f, 0.8f);
+                Color foldoutBorderColor = isDarkTheme ? new Color(0.5f, 0.5f, 0.5f, 1f) : new Color(0.8f, 0.8f, 0.8f, 1f);
+                
+                foldout.style.backgroundColor = foldoutBackgroundColor;
+                foldout.style.borderLeftWidth = 1;
+                foldout.style.borderRightWidth = 1;
+                foldout.style.borderTopWidth = 1;
+                foldout.style.borderBottomWidth = 1;
+                foldout.style.borderLeftColor = foldoutBorderColor;
+                foldout.style.borderRightColor = foldoutBorderColor;
+                foldout.style.borderTopColor = foldoutBorderColor;
+                foldout.style.borderBottomColor = foldoutBorderColor;
+                foldout.style.borderTopLeftRadius = 3;
+                foldout.style.borderTopRightRadius = 3;
+                foldout.style.borderBottomLeftRadius = 3;
+                foldout.style.borderBottomRightRadius = 3;
+                foldout.style.paddingLeft = 20;
+                foldout.style.paddingRight = 20;
+                foldout.style.paddingTop = 5;
+                foldout.style.paddingBottom = 5;
+                foldout.style.marginBottom = 5;
+                
+                // 这里需要添加样式编辑器的内容
+                // 由于UIElements的限制，可能需要使用PropertyField来显示样式属性
+                var styleContainer = new VisualElement();
+                styleContainer.style.marginLeft = 10;
+                styleContainer.style.marginTop = 5;
+                
+                Color contentBackgroundColor = isDarkTheme ? new Color(0.4f, 0.4f, 0.4f, 0.5f) : new Color(1f, 1f, 1f, 0.5f);
+                Color placeholderTextColor = isDarkTheme ? new Color(0.7f, 0.7f, 0.7f, 1f) : new Color(0.5f, 0.5f, 0.5f, 1f);
+                
+                styleContainer.style.backgroundColor = contentBackgroundColor;
+                styleContainer.style.paddingLeft = 8;
+                styleContainer.style.paddingRight = 8;
+                styleContainer.style.paddingTop = 5;
+                styleContainer.style.paddingBottom = 5;
+                styleContainer.style.borderTopLeftRadius = 2;
+                styleContainer.style.borderTopRightRadius = 2;
+                styleContainer.style.borderBottomLeftRadius = 2;
+                styleContainer.style.borderBottomRightRadius = 2;
+                
+                // 添加样式属性编辑
+                var styleEditor = componentStyle.style.CreateUIElementsEditor(component);
+                styleContainer.Add(styleEditor);
+                
+                foldout.Add(styleContainer);
+                var space = new VisualElement();
+                space.style.height = 20;
+                borderedContainer.Add(foldout);
+            }
+            
+            container.Add(borderedContainer);
+            return container;
+        }
+        
+        /// <summary>
+        /// 创建保存和删除样式按钮
+        /// </summary>
+        private VisualElement CreateSaveAndDeleteStateStyleButton()
+        {
+            var container = new VisualElement();
+            container.name = "save-delete-buttons";
+            
+            var buttonRow = new VisualElement();
+            buttonRow.style.flexDirection = FlexDirection.Row;
+            buttonRow.style.marginBottom = 10;
+            
+            // 保存样式按钮
+            var saveButton = new UIElementsButton(() => {
+                // 使用用户输入的状态名，如果没有输入则使用当前状态名
+                string stateNameToSave = !string.IsNullOrEmpty(inputStateName) ? inputStateName : aSUIStyleState.CurrentState;
+                
+                if (string.IsNullOrEmpty(stateNameToSave))
+                {
+                    EditorUtility.DisplayDialog("保存样式", "没有命名样式,请命名后保存", "ok");
+                }
+                else
+                {
+                    var existingState = aSUIStyleState.GetStyleState(stateNameToSave);
+                    if (existingState != null && !EditorUtility.DisplayDialog("保存样式", $"样式 {stateNameToSave} 已存在，确定覆盖样式吗？", "确定", "取消"))
+                    {
+                        return;
+                    }
+                    
+                    var componentStyles = new List<ASUIComponentStyleData>();
+                    foreach (var componentInfo in aSUIStyleState.ComponentInfos)
+                    {
+                        if (componentInfo.component == null)
+                            continue;
+                            
+                        var type = componentInfo.component.GetType();
+                        Type styleType = null;
+                        var asuiAssembly = System.Reflection.Assembly.Load("ASUI");
+                        if (asuiAssembly != null)
+                        {
+                            var styleTypeName = $"ASUI.{type.Name}Style";
+                            styleType = asuiAssembly.GetType(styleTypeName);
+                        }
+                        if (styleType == null)
+                            continue;
+                            
+                        var styleTypeAttribute = styleType.GetCustomAttribute<ASUIStyleAttribute>();
+                        if (styleTypeAttribute != null && styleTypeAttribute.ComponentType == type)
+                        {
+                            var asuiStyle = Activator.CreateInstance(styleType) as IASUIStyle;
+                            asuiStyle.SaveStyle(componentInfo.component);
+                            
+                            componentStyles.Add(new ASUIComponentStyleData
+                            {
+                                componentName = componentInfo.componentName,
+                                componentTypeName = componentInfo.componentTypeName,
+                                style = asuiStyle
+                            });
+                        }
+                    }
+                    
+                    aSUIStyleState.AddOrUpdateState(stateNameToSave, componentStyles);
+                    _ = aSUIStyleState.ApplyState(stateNameToSave);
+                    inputStateName = null;
+                    isDirty = true;
+                }
+            });
+            saveButton.text = "保存样式";
+            saveButton.style.flexGrow = 1;
+            saveButton.style.marginRight = 5;
+            buttonRow.Add(saveButton);
+            
+            // 删除样式按钮
+            var deleteButton = new UIElementsButton(() => {
+                bool result = EditorUtility.DisplayDialog("删除样式", $"确定要删除样式 {aSUIStyleState.CurrentState} 吗？", "确定", "取消");
+                if (result)
+                {
+                    aSUIStyleState.StyleStates.RemoveAll(s => s.stateName == aSUIStyleState.CurrentState);
+                    isDirty = true;
+                }
+            });
+            deleteButton.text = "删除样式";
+            deleteButton.style.flexGrow = 1;
+            buttonRow.Add(deleteButton);
+            
+            container.Add(buttonRow);
+            return container;
         }
         
         /// <summary>
@@ -271,438 +792,61 @@ namespace ASUI
             
             container.Add(table);
         }
+        
         /// <summary>
-        /// 绘制ASUIInfo表头
+        /// 创建主动画编辑器
         /// </summary>
-        private void DrawASUIInfoListHead()
+        private VisualElement CreateMainAnimationEditor()
         {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Name", GUILayout.ExpandWidth(true));
-            EditorGUILayout.LabelField("Type", GUILayout.Width(130));
-            EditorGUILayout.LabelField("Component", GUILayout.Width(200));
-            EditorGUILayout.EndHorizontal();
-            EditorGUI.DrawRect(EditorGUILayout.GetControlRect(false, 1), Color.gray);
-            EditorGUILayout.Space();
-        }
-
-        /// <summary>
-        /// 绘制ASUIInfo列表
-        /// </summary>
-        private void DrawASUIInfoReorderableList()
-        {
-            reorderableList.drawHeaderCallback = (Rect rect) =>
-            {
-                EditorGUI.LabelField(rect, "需要配置状态的UI列表");
-            };
-            reorderableList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
-            {
-                // 获取第index个element
-                SerializedProperty element = reorderableList.serializedProperty.GetArrayElementAtIndex(index);
-                if (element == null) return;
-                
-                SerializedProperty componentProperty = element.FindPropertyRelative("component");
-                Component oldComponent = componentProperty?.objectReferenceValue as Component;
-
-                EditorGUILayout.BeginHorizontal();
-                
-                // 计算每个字段的宽度，留出间隔
-                float spacing = 10f;
-                float fieldWidth = (rect.width - spacing * 2) / 3f;
-                
-                SerializedProperty nameProperty = element.FindPropertyRelative("componentName");
-                if (nameProperty != null)
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, fieldWidth, rect.height), nameProperty, GUIContent.none);
-                    
-                bool folder = EditorGUI.DropdownButton(new Rect(rect.x + fieldWidth + spacing, rect.y + 2, fieldWidth, rect.height), new GUIContent(oldComponent == null ? "" : oldComponent.GetType().Name), FocusType.Keyboard, EditorStyles.popup);
-                if (folder && oldComponent != null)
-                {
-                    GenericMenu componentMenu = new GenericMenu();
-                    Component[] components = oldComponent.GetComponents<Component>();
-                    for (int i = 0; i < components.Length; i++)
-                    {
-                        Component menuComponent = components[i];
-                        componentMenu.AddItem(new GUIContent(components[i].GetType().Name), selectedComponent.ContainsKey(menuComponent.gameObject) && selectedComponent[menuComponent.gameObject] == menuComponent.GetType(), () =>
-                        {
-                            selectedComponent.Set(menuComponent.gameObject, menuComponent.GetType());
-                            var componentInfo = aSUIStyleState.ComponentInfos[index];
-                            componentInfo.component = menuComponent;
-                            componentInfo.componentTypeName = menuComponent.GetType().FullName;
-                            aSUIStyleState.ComponentInfos[index] = componentInfo;
-                            EditorUtility.SetDirty(serializedObject.targetObject);
-                        });
-                    }
-                    componentMenu.ShowAsContext();
-                }
-                if (componentProperty != null)
-                    EditorGUI.PropertyField(new Rect(rect.x + (fieldWidth + spacing) * 2, rect.y, fieldWidth, rect.height), componentProperty, GUIContent.none);
-                EditorGUILayout.EndHorizontal();
-            };
-            reorderableList.DoLayoutList();
-        }
-        /// <summary>
-        /// 绘制拖拽提示区域
-        /// </summary>
-        private void DrawDragArea()
-        {
-            //“拖拽到这里添加”，提示区域
-            GUIStyle helpStyle = new GUIStyle(EditorStyles.helpBox);
-            helpStyle.alignment = TextAnchor.MiddleCenter;
-            helpStyle.normal.textColor = Color.white;
-            helpStyle.fontSize = 18;
-            helpStyle.fontStyle = FontStyle.BoldAndItalic;
-            helpStyle.border = GUI.skin.window.border;
-            EditorGUILayout.LabelField(GUIContent.none, new GUIContent("拖 拽 到 这 里 添 加"), helpStyle, GUILayout.Height(100), GUILayout.ExpandWidth(true));
-            //拖拽到区域时
-            if (Event.current.type == EventType.DragUpdated)
-            {
-                DragAndDrop.visualMode = DragAndDropVisualMode.Link;
-                Event.current.Use();
-            }
-            //拖拽到区域松开时，往字典里新增项
-            else if (Event.current.type == EventType.DragPerform)
-            {
-                // To consume drag data.
-                DragAndDrop.AcceptDrag();
-
-                // GameObjects from hierarchy.
-                if (DragAndDrop.paths.Length == 0 && DragAndDrop.objectReferences.Length > 0)
-                {
-                    isDirty = true;
-                    foreach (UnityEngine.Object obj in DragAndDrop.objectReferences)
-                    {
-                        GameObject dragObject = (GameObject)obj;
-                        RectTransform rectTransform = dragObject.gameObject.GetComponent<RectTransform>();
-                        if (dragObject != null && rectTransform != null)
-                        {
-                            string name = dragObject.name;
-                            while (aSUIStyleState.ComponentInfos.Where(info => info.componentName == name).Count() > 0)
-                            {
-                                string[] nameSplit = name.Split('_');
-                                if (nameSplit.Length > 1)
-                                    name = nameSplit[0] + $"_{int.Parse(nameSplit[nameSplit.Length - 1]) + 1}";
-                                else
-                                    name += "_1";
-                            }
-                            bool isExistSuitableComponent = false;
-                            foreach (Type componentType in PrioritySelectionComponentTypeList)
-                            {
-                                if (dragObject.GetComponent(componentType) != null)
-                                {
-                                    aSUIStyleState.AddComponentWithName(name, dragObject.GetComponent(componentType));
-                                    isExistSuitableComponent = true;
-                                    break;
-                                }
-                            }
-                            if (!isExistSuitableComponent)
-                                aSUIStyleState.AddComponentWithName(name, dragObject.GetComponent<RectTransform>());
-                        }
-                    }
-                }
-            }
-        }
-        /// <summary>
-        /// 绘制切换状态的下拉菜单和当前状态名
-        /// </summary>
-        private void DrawSwitchStateDropdownButton()
-        {
-            EditorGUILayout.BeginHorizontal();
-            //指示当前样式状态
-            if (EditorGUILayout.DropdownButton(new GUIContent(aSUIStyleState.CurrentState), FocusType.Keyboard))
-            {
-                GenericMenu componentMenu = new GenericMenu();
-                var stateList = aSUIStyleState.StyleStates.Select(s => s.stateName).ToList();
-                for (int i = 0; i < stateList.Count; i++)
-                {
-                    int index = i;
-                    var stateName = stateList[index];
-                    componentMenu.AddItem(new GUIContent(stateName), aSUIStyleState.CurrentState == stateName, () =>
-                    {
-                        _ = aSUIStyleState.ApplyState(stateName);
-                        // 切换状态时清空输入状态名
-                        inputStateName = null;
-                        EditorUtility.SetDirty(serializedObject.targetObject);
-                        serializedObject.ApplyModifiedProperties();
-                    });
-                }
-                componentMenu.ShowAsContext();
-            }
-            string newState = EditorGUILayout.TextField(aSUIStyleState.CurrentState);
-            if (newState != aSUIStyleState.CurrentState)
-            {
-                // 记录用户输入的状态名，但不立即切换状态
-                inputStateName = newState;
-                isDirty = true;
-            }
-            EditorGUILayout.EndHorizontal();
-        }
-        /// <summary>
-        /// 绘制组件对应的样式文件夹
-        /// </summary>
-        private void DrawStateStyleFolderList()
-        {
-            var currentStateData = GetCurrentStateData();
-            if (currentStateData == null)
-                return;
-                
-            foreach (var componentStyle in currentStateData.componentStyles)
-            {
-                Component component = aSUIStyleState.GetComponentByUIName<Component>(componentStyle.componentName);
-                if (component == null || componentStyle.style == null)
-                    continue;
-
-                if (!styleEditorFolderState.ContainsKey(component))
-                    styleEditorFolderState.Add(component, false);
-
-                ASUIEditorExtend.Foldout(component.name,
-                    () => styleEditorFolderState[component],
-                    (isFolder) => styleEditorFolderState[component] = isFolder,
-                    () =>
-                    {
-                        EditorGUILayout.Space();
-                        componentStyle.style.DrawInEditorFoldout(component);
-                    });
-            }
-        }
-        /// <summary>
-        ///  绘制保存和删除样式按钮
-        /// </summary>
-        private void DrawSaveAndDeleteStateStyleButton()
-        {
-            //保存当前组件的样式
-            if (GUILayout.Button(new GUIContent("保存样式")))
-            {
-                // 使用用户输入的状态名，如果没有输入则使用当前状态名
-                string stateNameToSave = !string.IsNullOrEmpty(inputStateName) ? inputStateName : aSUIStyleState.CurrentState;
-                
-                if (string.IsNullOrEmpty(stateNameToSave))
-                {
-                    EditorUtility.DisplayDialog("保存样式", "没有命名样式,请命名后保存", "ok");
-                }
-                else
-                {
-                    var existingState = aSUIStyleState.GetStyleState(stateNameToSave);
-                    if (existingState != null && !EditorUtility.DisplayDialog("保存样式", $"样式 {stateNameToSave} 已存在，确定覆盖样式吗？", "确定", "取消"))
-                    {
-                        return;
-                    }
-                    
-                    var componentStyles = new List<ASUIComponentStyleData>();
-                    foreach (var componentInfo in aSUIStyleState.ComponentInfos)
-                    {
-                        if (componentInfo.component == null)
-                            continue;
-                            
-                        var type = componentInfo.component.GetType();
-                        Type styleType = null;
-                        var asuiAssembly = System.Reflection.Assembly.Load("ASUI");
-                        if (asuiAssembly != null)
-                        {
-                            var styleTypeName = $"ASUI.{type.Name}Style";
-                            styleType = asuiAssembly.GetType(styleTypeName);
-                        }
-                        if (styleType == null)
-                            continue;
-                            
-                        var styleTypeAttribute = styleType.GetCustomAttribute<ASUIStyleAttribute>();
-                        if (styleTypeAttribute != null && styleTypeAttribute.ComponentType == type)
-                        {
-                            var asuiStyle = Activator.CreateInstance(styleType) as IASUIStyle;
-                            asuiStyle.SaveStyle(componentInfo.component);
-                            
-                            componentStyles.Add(new ASUIComponentStyleData
-                            {
-                                componentName = componentInfo.componentName,
-                                componentTypeName = componentInfo.componentTypeName,
-                                style = asuiStyle
-                            });
-                        }
-                    }
-                    
-                    aSUIStyleState.AddOrUpdateState(stateNameToSave, componentStyles);
-                    // 保存成功后，应用新状态并清空输入状态名
-                    _ = aSUIStyleState.ApplyState(stateNameToSave);
-                    inputStateName = null;
-                    isDirty = true;
-                }
-            }
-            if (GUILayout.Button(new GUIContent("删除样式")))
-            {
-                bool result = EditorUtility.DisplayDialog("删除样式", $"确定要删除样式 {aSUIStyleState.CurrentState} 吗？", "确定", "取消");
-                if (result)
-                {
-                    var stateToRemove = aSUIStyleState.StyleStates.FirstOrDefault(s => s.stateName == aSUIStyleState.CurrentState);
-                    if (stateToRemove != null)
-                    {
-                        aSUIStyleState.StyleStates.Remove(stateToRemove);
-                        if (aSUIStyleState.StyleStates.Count > 0)
-                            _ = aSUIStyleState.ApplyState(aSUIStyleState.StyleStates.First().stateName);
-                        else
-                            _ = aSUIStyleState.ApplyState("normal");
-                    }
-                    isDirty = true;
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-        }
-
-        /// <summary>
-        /// 绘制AnimTo按钮
-        /// </summary>
-        private void DrawAnimToButton()
-        {
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("动画转换矩阵", EditorStyles.boldLabel);
+            var container = new VisualElement();
+            container.name = "main-animation-editor";
             
-            var stateList = aSUIStyleState.StyleStates.Select(s => s.stateName).ToList();
-            if (stateList.Count < 2)
+            if (mainAnimation == null) return container;
+            
+            // 添加标题
+            var titleLabel = new Label("主动画配置");
+            titleLabel.style.fontSize = 14;
+            titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            container.Add(titleLabel);
+            
+            // 创建或更新编辑器
+            if (mainAnimationEditor == null || mainAnimationEditor.target != mainAnimation)
             {
-                EditorGUILayout.HelpBox("需要至少2个状态才能创建动画转换", MessageType.Info);
-                return;
+                if (mainAnimationEditor != null)
+                {
+                    DestroyImmediate(mainAnimationEditor);
+                }
+                mainAnimationEditor = Editor.CreateEditor(mainAnimation) as LitMotion.Animation.Editor.LitMotionAnimationEditor;
             }
             
-            // 绘制状态转换矩阵
-            DrawAnimationMatrix(stateList);
-        }
-
-        /// <summary>
-        /// 绘制动画转换矩阵
-        /// </summary>
-        private void DrawAnimationMatrix(List<string> stateList)
-        {
-            var animRoot = aSUIStyleState.transform.Find("_Anim");
-            var existingAnimations = new HashSet<string>();
-            
-            // 获取已存在的动画配置
-            if (animRoot != null)
+            // 使用LitMotionAnimation的原生UI Toolkit编辑器
+            if (mainAnimationEditor != null)
             {
-                for (int i = 0; i < animRoot.childCount; i++)
+                var nativeEditor = mainAnimationEditor.CreateInspectorGUI();
+                if (nativeEditor != null)
                 {
-                    var child = animRoot.GetChild(i);
-                    if (child.GetComponent<LitMotion.Animation.LitMotionAnimation>() != null)
-                    {
-                        existingAnimations.Add(child.name);
-                    }
+                    container.Add(nativeEditor);
                 }
             }
             
-            // 绘制矩阵表头
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("从\\到", GUILayout.Width(60));
-            foreach (var state in stateList)
-            {
-                EditorGUILayout.LabelField(state, GUILayout.Width(80), GUILayout.Height(20));
-            }
-            EditorGUILayout.EndHorizontal();
-            
-            // 绘制矩阵内容
-            for (int i = 0; i < stateList.Count; i++)
-            {
-                var fromState = stateList[i];
-                EditorGUILayout.BeginHorizontal();
-                
-                // 行标签
-                EditorGUILayout.LabelField(fromState, GUILayout.Width(60), GUILayout.Height(20));
-                
-                // 绘制每个转换按钮
-                for (int j = 0; j < stateList.Count; j++)
-                {
-                    var toState = stateList[j];
-                    var animationName = $"{fromState}To{toState}";
-                    var hasAnimation = existingAnimations.Contains(animationName);
-                    var isSameState = fromState == toState;
-                    
-                    // 设置按钮样式
-                    var originalColor = GUI.backgroundColor;
-                    if (hasAnimation)
-                    {
-                        GUI.backgroundColor = Color.green; // 已存在动画
-                    }
-                    else if (isSameState)
-                    {
-                        GUI.backgroundColor = Color.gray; // 相同状态
-                    }
-                    else
-                    {
-                        GUI.backgroundColor = Color.white; // 可创建动画
-                    }
-                    
-                    // 绘制按钮
-                    var buttonText = isSameState ? "-" : (hasAnimation ? "✓" : "+");
-                    var buttonWidth = 80;
-                    
-                    if (GUILayout.Button(buttonText, GUILayout.Width(buttonWidth), GUILayout.Height(20)))
-                    {
-                        if (!isSameState)
-                        {
-                            if (hasAnimation)
-                            {
-                                // 动画已存在，检查主GameObject的动画组件是否有修改
-                                if (HasMainAnimationBeenModified())
-                                {
-                                    if (EditorUtility.DisplayDialog("保存修改", 
-                                        "当前动画组件有未保存的修改，是否保存到当前动画配置？", 
-                                        "保存", "放弃"))
-                                    {
-                                        // 保存主GameObject的动画组件到当前正在编辑的动画配置
-                                        SaveMainAnimationToTarget(currentEditingAnimationName);
-                                    }
-                                }
-                                
-                                // 切换到已存在的动画配置
-                                SwitchToExistingAnimation(animationName);
-                            }
-                            else
-                            {
-                                // 动画不存在，创建新动画
-                                CreateAnimationToState(fromState, toState);
-                            }
-                        }
-                    }
-                    
-                    GUI.backgroundColor = originalColor;
-                }
-                
-                EditorGUILayout.EndHorizontal();
-            }
-            
-            // 添加图例说明
-            EditorGUILayout.Space();
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("图例:", GUILayout.Width(40));
-            
-            GUI.backgroundColor = Color.green;
-            EditorGUILayout.LabelField("✓", GUILayout.Width(20));
-            GUI.backgroundColor = Color.white;
-            EditorGUILayout.LabelField("已创建", GUILayout.Width(50));
-            
-            GUI.backgroundColor = Color.white;
-            EditorGUILayout.LabelField("+", GUILayout.Width(20));
-            EditorGUILayout.LabelField("可创建", GUILayout.Width(50));
-            
-            GUI.backgroundColor = Color.gray;
-            EditorGUILayout.LabelField("-", GUILayout.Width(20));
-            GUI.backgroundColor = Color.white;
-            EditorGUILayout.LabelField("相同状态", GUILayout.Width(60));
-            
-            EditorGUILayout.EndHorizontal();
+            return container;
         }
-
+        
         /// <summary>
         /// 创建到指定状态的动画
         /// </summary>
         private void CreateAnimationToState(string fromState, string toState)
         {
-
             // 获取当前状态和目标状态的样式数据
             var fromStateData = aSUIStyleState.GetStateData(fromState);
             var toStateData = aSUIStyleState.GetStateData(toState);
-
+            
             if (fromStateData == null || toStateData == null)
             {
                 EditorUtility.DisplayDialog("创建动画", "无法获取状态数据", "确定");
                 return;
             }
-
+            
             // 1. 查找或创建_Anim子节点
             var animRoot = GetOrCreateAnimRoot();
 
@@ -719,8 +863,39 @@ namespace ASUI
 
             // 4. 初始化components数组
             ASUIStyleState.InitializeComponentsArray(litMotionAnimation);
+            
+            // 根据组件值是否相等决定是否添加动画组件
+            SetAnimationValues(litMotionAnimation, fromState, toState);
+            
             EditorUtility.DisplayDialog("创建动画", $"已创建动画: {animationName}", "确定");
+            isDirty = true;
             SwitchToExistingAnimation(animationName);
+        }
+        
+        /// <summary>
+        /// 设置动画的起始值和结束值
+        /// </summary>
+        private void SetAnimationValues(LitMotion.Animation.LitMotionAnimation animation, string fromState, string toState)
+        {
+            var fromStateData = aSUIStyleState.GetStateData(fromState);
+            var toStateData = aSUIStyleState.GetStateData(toState);
+            
+            if (fromStateData == null || toStateData == null) return;
+            
+            // 遍历所有组件，检查是否需要添加动画
+            foreach (var componentInfo in aSUIStyleState.ComponentInfos)
+            {
+                if (componentInfo.component == null) continue;
+                
+                var fromStyle = fromStateData.FirstOrDefault(s => s.componentName == componentInfo.componentName);
+                var toStyle = toStateData.FirstOrDefault(s => s.componentName == componentInfo.componentName);
+                
+                if (fromStyle?.style != null && toStyle?.style != null)
+                {
+                    // 使用起始样式的AddAnimationComponents方法，传入目标样式
+                    fromStyle.style.AddAnimationComponents(animation, componentInfo.component, toStyle.style);
+                }
+            }
         }
         
         /// <summary>
@@ -752,45 +927,6 @@ namespace ASUI
             var animationObject = new GameObject(animationName);
             animationObject.transform.SetParent(animRoot);
             return animationObject;
-        }
-        
-        /// <summary>
-        /// 创建主动画编辑器
-        /// </summary>
-        private VisualElement CreateMainAnimationEditor()
-        {
-            var container = new VisualElement();
-            container.name = "main-animation-editor";
-            
-            if (mainAnimation == null) return container;
-            
-            // 添加标题
-            var titleLabel = new Label("主动画配置");
-            titleLabel.style.fontSize = 14;
-            titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-            container.Add(titleLabel);
-            
-            // 创建或更新编辑器
-            if (mainAnimationEditor == null || mainAnimationEditor.target != mainAnimation)
-            {
-                if (mainAnimationEditor != null)
-                {
-                    DestroyImmediate(mainAnimationEditor);
-                }
-                mainAnimationEditor = Editor.CreateEditor(mainAnimation);
-            }
-            
-            // 使用LitMotionAnimation的原生UI Toolkit编辑器
-            if (mainAnimationEditor != null)
-            {
-                var nativeEditor = mainAnimationEditor.CreateInspectorGUI();
-                if (nativeEditor != null)
-                {
-                    container.Add(nativeEditor);
-                }
-            }
-            
-            return container;
         }
         
         /// <summary>
@@ -839,7 +975,6 @@ namespace ASUI
             }
         }
         
-
         /// <summary>
         /// 检查主GameObject的动画组件是否被修改
         /// </summary>
@@ -847,7 +982,6 @@ namespace ASUI
         {
             // 简单判断：如果当前正在编辑的动画配置不为空，说明用户可能修改了
             // 这是一个简化的判断，实际项目中可能需要更复杂的逻辑
-            //return !string.IsNullOrEmpty(currentEditingAnimationName);
             return false;
         }
         
@@ -914,7 +1048,3 @@ namespace ASUI
         }
     }
 }
-
-
-
-

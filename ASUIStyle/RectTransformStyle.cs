@@ -11,13 +11,13 @@ namespace ASUI
 {
     [System.Serializable]
     [ASUIStyle(typeof(RectTransform))]
-    public struct RectTransformStyle : IASUIStyle
+    public class RectTransformStyle : IASUIStyle
     {
         public Vector3 position;
         public Vector3 scale;
         public Quaternion rotation;
 
-        public readonly async Task ApplyStyle(Component component)
+        public async Task ApplyStyle(Component component)
         {
             RectTransform rectTransform = component as RectTransform;
             rectTransform.position = position;
@@ -32,24 +32,24 @@ namespace ASUI
             scale = rectTransform.localScale;
             rotation = rectTransform.rotation;
         }
-        
+
 #if UNITY_EDITOR
         public void AddAnimationComponents(LitMotionAnimation animation, Component component, IASUIStyle toStyle)
         {
             if (!(toStyle is RectTransformStyle toRectStyle))
                 return;
-                
+
             // 比较position，如果不同则添加position动画
             if (position != toRectStyle.position)
             {
                 // 添加position动画组件
                 var positionAnimation = new LitMotion.Animation.Components.TransformPositionAnimation();
-                
+
                 // 使用反射设置受保护的属性
                 var targetField = typeof(LitMotion.Animation.PropertyAnimationComponent<Transform, Vector3, LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("target", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 targetField?.SetValue(positionAnimation, component as Transform);
-                
+
                 var settingsField = typeof(LitMotion.Animation.PropertyAnimationComponent<Transform, Vector3, LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("settings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 settingsField?.SetValue(positionAnimation, new LitMotion.SerializableMotionSettings<Vector3, LitMotion.NoOptions>
@@ -59,26 +59,26 @@ namespace ASUI
                     Duration = 1.0f,
                     Ease = LitMotion.Ease.OutQuart
                 });
-                
+
                 var useWorldSpaceField = typeof(LitMotion.Animation.Components.TransformPositionAnimationBase<LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("useWorldSpace", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 useWorldSpaceField?.SetValue(positionAnimation, true);
-                
+
                 ASUIStyleState.AddComponentToAnimation(animation, positionAnimation);
                 Debug.Log($"添加Position动画: {position} → {toRectStyle.position}");
             }
-            
+
             // 比较scale，如果不同则添加scale动画
             if (scale != toRectStyle.scale)
             {
                 // 添加scale动画组件
                 var scaleAnimation = new LitMotion.Animation.Components.TransformScaleAnimation();
-                
+
                 // 使用反射设置受保护的属性
                 var targetField = typeof(LitMotion.Animation.PropertyAnimationComponent<Transform, Vector3, LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("target", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 targetField?.SetValue(scaleAnimation, component as Transform);
-                
+
                 var settingsField = typeof(LitMotion.Animation.PropertyAnimationComponent<Transform, Vector3, LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("settings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 settingsField?.SetValue(scaleAnimation, new LitMotion.SerializableMotionSettings<Vector3, LitMotion.NoOptions>
@@ -88,22 +88,22 @@ namespace ASUI
                     Duration = 1.0f,
                     Ease = LitMotion.Ease.OutQuart
                 });
-                
+
                 ASUIStyleState.AddComponentToAnimation(animation, scaleAnimation);
                 Debug.Log($"添加Scale动画: {scale} → {toRectStyle.scale}");
             }
-            
+
             // 比较rotation，如果不同则添加rotation动画
             if (rotation != toRectStyle.rotation)
             {
                 // 添加rotation动画组件
                 var rotationAnimation = new LitMotion.Animation.Components.TransformRotationAnimation();
-                
+
                 // 使用反射设置受保护的属性
                 var targetField = typeof(LitMotion.Animation.PropertyAnimationComponent<Transform, Vector3, LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("target", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 targetField?.SetValue(rotationAnimation, component as Transform);
-                
+
                 var settingsField = typeof(LitMotion.Animation.PropertyAnimationComponent<Transform, Vector3, LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("settings", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 settingsField?.SetValue(rotationAnimation, new LitMotion.SerializableMotionSettings<Vector3, LitMotion.NoOptions>
@@ -113,54 +113,66 @@ namespace ASUI
                     Duration = 1.0f,
                     Ease = LitMotion.Ease.OutQuart
                 });
-                
+
                 var useWorldSpaceField = typeof(LitMotion.Animation.Components.TransformRotationAnimationBase<LitMotion.NoOptions, LitMotion.Adapters.Vector3MotionAdapter>)
                     .GetField("useWorldSpace", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 useWorldSpaceField?.SetValue(rotationAnimation, true);
-                
+
                 ASUIStyleState.AddComponentToAnimation(animation, rotationAnimation);
                 Debug.Log($"添加Rotation动画: {rotation} → {toRectStyle.rotation}");
             }
         }
-        
+
 #endif
 #if UNITY_EDITOR
-        public void DrawInEditorFoldout(Component component = null)
+        public UnityEngine.UIElements.VisualElement CreateUIElementsEditor(Component component = null)
         {
-            var newPosition = EditorGUILayout.Vector3Field("Position", position);
-            if (newPosition != position)
+            var container = new UnityEngine.UIElements.VisualElement();
+            container.name = "rect-transform-style-editor";
+
+            // Position字段
+            var positionField = new UnityEngine.UIElements.Vector3Field("Position");
+            positionField.value = position;
+            positionField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Vector3>>(evt =>
             {
-                position = newPosition;
-                if (component != null)
+                position = evt.newValue;
+                if (component is RectTransform rectTransform)
                 {
-                    _ = ApplyStyle(component);
+                    rectTransform.position = position;
                     EditorUtility.SetDirty(component);
                 }
-            }
-            
-            EditorGUILayout.Space();
-            var newRotation = Quaternion.Euler(EditorGUILayout.Vector3Field("Rotation", rotation.eulerAngles));
-            if (newRotation != rotation)
+            });
+            container.Add(positionField);
+
+            // Rotation字段
+            var rotationField = new UnityEngine.UIElements.Vector3Field("Rotation");
+            rotationField.value = rotation.eulerAngles;
+            rotationField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Vector3>>(evt =>
             {
-                rotation = newRotation;
-                if (component != null)
+                rotation = Quaternion.Euler(evt.newValue);
+                if (component is RectTransform rectTransform)
                 {
-                    _ = ApplyStyle(component);
+                    rectTransform.rotation = rotation;
                     EditorUtility.SetDirty(component);
                 }
-            }
-            
-            EditorGUILayout.Space();
-            var newScale = EditorGUILayout.Vector3Field("Scale", scale);
-            if (newScale != scale)
+            });
+            container.Add(rotationField);
+
+            // Scale字段
+            var scaleField = new UnityEngine.UIElements.Vector3Field("Scale");
+            scaleField.value = scale;
+            scaleField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Vector3>>(evt =>
             {
-                scale = newScale;
-                if (component != null)
+                scale = evt.newValue;
+                if (component is RectTransform rectTransform)
                 {
-                    _ = ApplyStyle(component);
+                    rectTransform.localScale = scale;
                     EditorUtility.SetDirty(component);
                 }
-            }
+            });
+            container.Add(scaleField);
+
+            return container;
         }
 #endif
     }
