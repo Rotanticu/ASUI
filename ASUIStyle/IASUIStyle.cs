@@ -23,7 +23,7 @@ namespace ASUI
         {
             await Task.CompletedTask;
         }
-        
+#if UNITY_EDITOR
         /// <summary>
         /// 为LitMotionAnimation添加动画组件
         /// 在实现类中根据具体的属性差异来决定添加哪些动画组件
@@ -33,7 +33,7 @@ namespace ASUI
         /// <param name="toStyle">目标样式</param>
         public void AddAnimationComponents(LitMotionAnimation animation, Component component, IASUIStyle toStyle);
         
-#if UNITY_EDITOR
+
         /// <summary>
         /// 创建UIElements样式的编辑器界面
         /// </summary>
