@@ -9,7 +9,7 @@ using UnityEditor;
 namespace ASUI
 {
     [System.Serializable]
-    [ASUIStyle(typeof(CanvasGroup))]
+    [ASUIStyle(typeof(CanvasGroup), 70)]
     public class CanvasGroupStyle : IASUIStyle
     {
         public float alpha;
@@ -65,17 +65,26 @@ namespace ASUI
             var container = new UnityEngine.UIElements.VisualElement();
             container.name = "canvas-group-style-editor";
 
+            var canvasGroup = component as CanvasGroup;
+            if (canvasGroup == null)
+            {
+                var errorLabel = new UnityEngine.UIElements.Label("错误: 组件类型不匹配，需要CanvasGroup组件");
+                errorLabel.style.color = Color.red;
+                container.Add(errorLabel);
+                return container;
+            }
+
+            // 从组件获取当前值
+            alpha = canvasGroup.alpha;
+
             // Alpha字段
             var alphaField = new UnityEngine.UIElements.FloatField("Alpha");
             alphaField.value = alpha;
             alphaField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<float>>(evt =>
             {
                 alpha = evt.newValue;
-                if (component is CanvasGroup canvasGroup)
-                {
-                    canvasGroup.alpha = alpha;
-                    EditorUtility.SetDirty(component);
-                }
+                canvasGroup.alpha = alpha;
+                EditorUtility.SetDirty(component);
             });
             container.Add(alphaField);
 

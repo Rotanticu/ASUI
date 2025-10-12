@@ -11,7 +11,7 @@ using UnityEditor;
 namespace ASUI
 {
     [System.Serializable]
-    [ASUIStyle(typeof(TextMeshProUGUI))]
+    [ASUIStyle(typeof(TextMeshProUGUI), 90)]
     public class TextMeshProUGUIStyle : IASUIStyle
     {
         public string text;
@@ -74,17 +74,27 @@ namespace ASUI
             var container = new UnityEngine.UIElements.VisualElement();
             container.name = "textmeshpro-style-editor";
 
+            var textMeshPro = component as TextMeshProUGUI;
+            if (textMeshPro == null)
+            {
+                var errorLabel = new UnityEngine.UIElements.Label("错误: 组件类型不匹配，需要TextMeshProUGUI组件");
+                errorLabel.style.color = Color.red;
+                container.Add(errorLabel);
+                return container;
+            }
+
+            // 从组件获取当前值
+            text = textMeshPro.text;
+            color = textMeshPro.color;
+
             // Text字段
             var textField = new UnityEngine.UIElements.TextField("Text");
             textField.value = text;
             textField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<string>>(evt =>
             {
                 text = evt.newValue;
-                if (component is TextMeshProUGUI textMeshPro)
-                {
-                    textMeshPro.text = text;
-                    EditorUtility.SetDirty(component);
-                }
+                textMeshPro.text = text;
+                EditorUtility.SetDirty(component);
             });
             container.Add(textField);
 
@@ -94,11 +104,8 @@ namespace ASUI
             colorField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Color>>(evt =>
             {
                 color = evt.newValue;
-                if (component is TextMeshProUGUI textMeshPro)
-                {
-                    textMeshPro.color = color;
-                    EditorUtility.SetDirty(component);
-                }
+                textMeshPro.color = color;
+                EditorUtility.SetDirty(component);
             });
             container.Add(colorField);
 

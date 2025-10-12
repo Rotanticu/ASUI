@@ -11,7 +11,7 @@ using UnityEditor;
 namespace ASUI
 {
     [System.Serializable]
-    [ASUIStyle(typeof(RawImage))]
+    [ASUIStyle(typeof(RawImage), 80)]
     public class RawImageStyle : IASUIStyle
     {
         public Color color;
@@ -76,17 +76,28 @@ namespace ASUI
             var container = new UnityEngine.UIElements.VisualElement();
             container.name = "raw-image-style-editor";
 
+            var rawImage = component as RawImage;
+            if (rawImage == null)
+            {
+                var errorLabel = new UnityEngine.UIElements.Label("错误: 组件类型不匹配，需要RawImage组件");
+                errorLabel.style.color = Color.red;
+                container.Add(errorLabel);
+                return container;
+            }
+
+            // 从组件获取当前值
+            color = rawImage.color;
+            texture = rawImage.texture;
+            material = rawImage.material;
+
             // Color字段
             var colorField = new UnityEditor.UIElements.ColorField("Color");
             colorField.value = color;
             colorField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Color>>(evt =>
             {
                 color = evt.newValue;
-                if (component is RawImage rawImage)
-                {
-                    rawImage.color = color;
-                    EditorUtility.SetDirty(component);
-                }
+                rawImage.color = color;
+                EditorUtility.SetDirty(component);
             });
             container.Add(colorField);
 
@@ -97,11 +108,8 @@ namespace ASUI
             textureField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
                 texture = evt.newValue as Texture;
-                if (component is RawImage rawImage)
-                {
-                    rawImage.texture = texture;
-                    EditorUtility.SetDirty(component);
-                }
+                rawImage.texture = texture;
+                EditorUtility.SetDirty(component);
             });
             container.Add(textureField);
 
@@ -112,11 +120,8 @@ namespace ASUI
             materialField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
                 material = evt.newValue as Material;
-                if (component is RawImage rawImage)
-                {
-                    rawImage.material = material;
-                    EditorUtility.SetDirty(component);
-                }
+                rawImage.material = material;
+                EditorUtility.SetDirty(component);
             });
             container.Add(materialField);
 

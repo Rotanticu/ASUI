@@ -10,7 +10,7 @@ using UnityEditor;
 namespace ASUI
 {
     [System.Serializable]
-    [ASUIStyle(typeof(RectTransform))]
+    [ASUIStyle(typeof(RectTransform), 10)]
     public class RectTransformStyle : IASUIStyle
     {
         public Vector3 position;
@@ -130,17 +130,28 @@ namespace ASUI
             var container = new UnityEngine.UIElements.VisualElement();
             container.name = "rect-transform-style-editor";
 
+            var rectTransform = component as RectTransform;
+            if (rectTransform == null)
+            {
+                var errorLabel = new UnityEngine.UIElements.Label("错误: 组件类型不匹配，需要RectTransform组件");
+                errorLabel.style.color = Color.red;
+                container.Add(errorLabel);
+                return container;
+            }
+
+            // 从组件获取当前值
+            position = rectTransform.position;
+            rotation = rectTransform.rotation;
+            scale = rectTransform.localScale;
+
             // Position字段
             var positionField = new UnityEngine.UIElements.Vector3Field("Position");
             positionField.value = position;
             positionField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Vector3>>(evt =>
             {
                 position = evt.newValue;
-                if (component is RectTransform rectTransform)
-                {
-                    rectTransform.position = position;
-                    EditorUtility.SetDirty(component);
-                }
+                rectTransform.position = position;
+                EditorUtility.SetDirty(component);
             });
             container.Add(positionField);
 
@@ -150,11 +161,8 @@ namespace ASUI
             rotationField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Vector3>>(evt =>
             {
                 rotation = Quaternion.Euler(evt.newValue);
-                if (component is RectTransform rectTransform)
-                {
-                    rectTransform.rotation = rotation;
-                    EditorUtility.SetDirty(component);
-                }
+                rectTransform.rotation = rotation;
+                EditorUtility.SetDirty(component);
             });
             container.Add(rotationField);
 
@@ -164,11 +172,8 @@ namespace ASUI
             scaleField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Vector3>>(evt =>
             {
                 scale = evt.newValue;
-                if (component is RectTransform rectTransform)
-                {
-                    rectTransform.localScale = scale;
-                    EditorUtility.SetDirty(component);
-                }
+                rectTransform.localScale = scale;
+                EditorUtility.SetDirty(component);
             });
             container.Add(scaleField);
 

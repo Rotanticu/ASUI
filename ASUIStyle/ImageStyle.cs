@@ -9,7 +9,7 @@ using UnityEditor;
 namespace ASUI
 {
     [System.Serializable]
-    [ASUIStyle(typeof(Image))]
+    [ASUIStyle(typeof(Image), 100)]
     public class ImageStyle : IASUIStyle
     {
         public Color color;
@@ -75,17 +75,28 @@ namespace ASUI
             var container = new UnityEngine.UIElements.VisualElement();
             container.name = "image-style-editor";
 
+            var image = component as Image;
+            if (image == null)
+            {
+                var errorLabel = new UnityEngine.UIElements.Label("错误: 组件类型不匹配，需要Image组件");
+                errorLabel.style.color = Color.red;
+                container.Add(errorLabel);
+                return container;
+            }
+
+            // 从组件获取当前值
+            color = image.color;
+            sprite = image.sprite;
+            material = image.material;
+
             // Color字段
             var colorField = new UnityEditor.UIElements.ColorField("Color");
             colorField.value = color;
             colorField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<Color>>(evt =>
             {
                 color = evt.newValue;
-                if (component is Image image)
-                {
-                    image.color = color;
-                    EditorUtility.SetDirty(component);
-                }
+                image.color = color;
+                EditorUtility.SetDirty(component);
             });
             container.Add(colorField);
 
@@ -96,11 +107,8 @@ namespace ASUI
             spriteField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
                 sprite = evt.newValue as Sprite;
-                if (component is Image image)
-                {
-                    image.sprite = sprite;
-                    EditorUtility.SetDirty(component);
-                }
+                image.sprite = sprite;
+                EditorUtility.SetDirty(component);
             });
             container.Add(spriteField);
 
@@ -111,11 +119,8 @@ namespace ASUI
             materialField.RegisterCallback<UnityEngine.UIElements.ChangeEvent<UnityEngine.Object>>(evt =>
             {
                 material = evt.newValue as Material;
-                if (component is Image image)
-                {
-                    image.material = material;
-                    EditorUtility.SetDirty(component);
-                }
+                image.material = material;
+                EditorUtility.SetDirty(component);
             });
             container.Add(materialField);
 
